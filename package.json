@@ -1,0 +1,184 @@
+{
+	"name": "dataiku-dss",
+	"publisher": "Dataiku",
+	"displayName": "Dataiku DSS",
+	"description": "Edit Dataiku DSS recipes, plugins and web apps directly into Visual Studio Code.",
+	"version": "0.0.7",
+	"enableProposedApi": true,
+	"icon": "resources/images/dataiku-logo.png",
+	"engines": {
+		"vscode": "^1.32.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"*"
+	],
+	"args": [
+		"${env:DKU_DSS_URL}",
+		"${env:DKU_API_KEY}"
+	],
+	"main": "./dist/extension",
+	"contributes": {
+		"keybindings": [
+			{
+				"command": "dssProjects.runRecipe",
+				"key": "ctrl+r",
+				"mac": "cmd+r"
+			}
+		],
+		"commands": [
+			{
+				"command": "setup.activateCertificateCheck",
+				"title": "Dataiku DSS: Activate certificate check"
+			},
+			{
+				"command": "setup.deactivateCertificateCheck",
+				"title": "Dataiku DSS: Deactivate certificate check"
+			},
+			{
+				"command": "setup.apiKey",
+				"title": "Dataiku DSS: Setup your API key"
+			},
+			{
+				"command": "setup.url",
+				"title": "Dataiku DSS: Setup your DSS instance URL"
+			},
+			{
+				"command": "dssProjects.refreshEntry",
+				"title": "Refresh",
+				"icon": {
+					"light": "resources/images/light/refresh.svg",
+					"dark": "resources/images/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "dssPlugins.refreshEntry",
+				"title": "Refresh",
+				"icon": {
+					"light": "resources/images/light/refresh.svg",
+					"dark": "resources/images/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "dssPlugins.newFile",
+				"title": "New File",
+				"icon": {
+					"light": "resources/images/light/new-file.svg",
+					"dark": "resources/images/dark/new-file.svg"
+				}
+			},
+			{
+				"command": "dssPlugins.deleteItem",
+				"title": "Delete",
+				"icon": {
+					"light": "resources/images/light/garbage.svg",
+					"dark": "resources/images/dark/garbage.svg"
+				}
+			},
+			{
+				"command": "dssPlugins.newFolder",
+				"title": "New Folder",
+				"icon": {
+					"dark": "resources/images/dark/new-add-folder.svg",
+					"light": "resources/images/light/new-add-folder.svg"
+				}
+			}
+		],
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "dss-explorer",
+					"title": "Dataiku DSS",
+					"icon": "resources/images/dataiku-logo.svg"
+				}
+			]
+		},
+		"views": {
+			"dss-explorer": [
+				{
+					"id": "dssProjects",
+					"name": "Projects"
+				},
+				{
+					"id": "dssPlugins",
+					"name": "Plugins"
+				}
+			]
+		},
+		"menus": {
+			"view/title": [
+				{
+					"command": "dssProjects.refreshEntry",
+					"group": "navigation",
+					"when": "view == dssProjects"
+				},
+				{
+					"command": "dssPlugins.refreshEntry",
+					"group": "navigation",
+					"when": "view == dssPlugins"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "dssPlugins.newFolder",
+					"group": "inline",
+					"when": "viewItem == actionableFolder"
+				},
+				{
+					"command": "dssPlugins.newFile",
+					"group": "inline",
+					"when": "viewItem == folder"
+				},
+				{
+					"command": "dssPlugins.newFile",
+					"group": "inline",
+					"when": "viewItem == actionableFolder"
+				},
+				{
+					"command": "dssPlugins.deleteItem",
+					"group": "actionGroup",
+					"when": "viewItem == deletableFile"
+				},
+				{
+					"command": "dssPlugins.deleteItem",
+					"group": "actionGroup",
+					"when": "viewItem == actionableFolder"
+				},
+				{
+					"command": "dssPlugins.newFolder",
+					"group": "inline",
+					"when": "viewItem == createableItemAtRoot"
+				},
+				{
+					"command": "dssPlugins.newFile",
+					"group": "inline",
+					"when": "viewItem == createableItemAtRoot"
+				}
+			]
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "webpack --mode production",
+		"compile": "webpack --mode none",
+		"watch": "webpack --mode none --watch",
+		"test-compile": "tsc -p ./",
+		"postinstall": "node ./node_modules/vscode/bin/install",
+		"test": "npm run compile && node ./node_modules/vscode/bin/test"
+	},
+	"devDependencies": {
+		"@types/mocha": "^2.2.42",
+		"@types/node": "^10.12.21",
+		"@types/request-promise-native": "^1.0.15",
+		"ts-loader": "^6.0.1",
+		"tslint": "^5.12.1",
+		"typescript": "^3.3.1",
+		"vscode": "^1.1.28",
+		"webpack": "^4.32.2",
+		"webpack-cli": "^3.3.2"
+	},
+	"dependencies": {
+		"request-promise-native": "^1.0.7"
+	}
+}
