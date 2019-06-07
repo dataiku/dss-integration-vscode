@@ -9,12 +9,22 @@
 		"type": "git",
 		"url": "https://github.com/dataiku/dss-integration-vscode.git"
 	},
+	"license": "SEE LICENSE file",
+	"homepage": "https://github.com/dataiku/dss-integration-vscode/blob/master/README.md",
+	"bugs": {
+		"url": "https://github.com/dataiku/dss-integration-vscode/issues",
+		"email": "support@dataiku.com"
+	},
 	"icon": "resources/images/dataiku-logo.png",
 	"engines": {
 		"vscode": "^1.32.0"
 	},
 	"categories": [
 		"Other"
+	],
+	"keywords": [
+		"Dataiku",
+		"DSS"
 	],
 	"activationEvents": [
 		"*"
