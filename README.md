@@ -65,9 +65,9 @@ They are two ways to set them:
         {
             "dss_instances": {
                 "default": {
-                "url": "http(s)://DSS_HOST:DSS_PORT/",
-                "api_key": "Your API key secret"
-                },
+                    "url": "http(s)://DSS_HOST:DSS_PORT/",
+                    "api_key": "Your API key secret"
+                }
             },
             "default_instance": "default"
         }
@@ -83,10 +83,10 @@ If this is not possible, you can also disable checking the SSL certificate:
     {
         "dss_instances": {
             "default": {
-            "url": "http(s)://DSS_HOST:DSS_PORT/",
-            "api_key": "Your API key secret",
-            "no_check_certificate": true
-            },
+                "url": "http(s)://DSS_HOST:DSS_PORT/",
+                "api_key": "Your API key secret",
+                "no_check_certificate": true
+            }
         },
         "default_instance": "default"
     }
