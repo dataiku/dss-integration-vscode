@@ -3,7 +3,7 @@
 	"publisher": "Dataiku",
 	"displayName": "Dataiku DSS",
 	"description": "Edit Dataiku DSS recipes, plugins and web apps directly into Visual Studio Code.",
-	"version": "0.0.7",
+	"version": "1.0.0",
 	"enableProposedApi": true,
 	"repository": {
 		"type": "git",
