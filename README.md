@@ -80,7 +80,7 @@ If you want to execute Python or R recipes locally and your DSS instance has SSL
 If this is not possible, you can also disable checking the SSL certificate:
 - By editing the configuration file:
     ```json
-        {
+    {
         "dss_instances": {
             "default": {
             "url": "http(s)://DSS_HOST:DSS_PORT/",
@@ -89,7 +89,7 @@ If this is not possible, you can also disable checking the SSL certificate:
             },
         },
         "default_instance": "default"
-        }
+    }
     ```
 - Or by running one of the commands, search for **DSS certificate** in the command Palette
 
