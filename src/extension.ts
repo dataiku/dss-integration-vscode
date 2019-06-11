@@ -5,11 +5,12 @@ import { PluginsTreeDataProvider } from './pluginsTreeDataProvider';
 import { Recipe, RecipeAndPayload, getRecipeAndPayload } from './api/recipe';
 import { getWebApp, WebApp, getModifiedWebApp } from './api/webapp';
 import { getPluginFileContentAndType, savePluginFile, getPluginItemDetails, removePluginContents, addPluginFolder } from './api/plugin';
-import { waitJobToFinish, abortJob, startRecipe } from './api/job';
+import { waitJobToFinish, abortJob, startRecipe, promptPartitions, isPartitioned } from './api/job';
 import { FSManager, FileDetails } from './fsManager';
-import { StatusBarItemsMap } from './statusBarItemsMap';
+import { RecipeStatusBarItemsMap } from './statusBarItemsMap';
 import { RecipeRemoteSaver, WebAppRemoteSaver, PluginRemoteSaver } from './remoteSaver';
 import { DSSConfiguration } from './dssConfiguration';
+import { getOuputToBuild } from './api/recipeOutput';
 
 interface TabBinding {
     uri: vscode.Uri;
@@ -40,6 +41,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('dssProjects.openWebApp', (item: WebAppFileTreeView) => dssExtension.openWebAppFile(item));
     vscode.commands.registerTextEditorCommand('dssProjects.abortRecipe', (textEditor: vscode.TextEditor) => dssExtension.abortRecipe(textEditor));
     vscode.commands.registerTextEditorCommand('dssProjects.runRecipe', (textEditor: vscode.TextEditor) => dssExtension.runRecipe(textEditor));
+    vscode.commands.registerTextEditorCommand('dssProjects.selectPartitions', (textEditor: vscode.TextEditor) => dssExtension.selectPartitions(textEditor));
 
     vscode.commands.registerCommand('dssPlugins.refreshEntry', () => dssExtension.refreshPlugins());
     vscode.commands.registerCommand('dssPlugins.openPluginFile', (item: PluginFileTreeView) => dssExtension.openPluginFile(item));
@@ -64,7 +66,7 @@ export function deactivate(): void {
 
 class DSSExtension {
     tabsBinding: TabBinding[] = [];
-    statusBarItemsMap: StatusBarItemsMap = new StatusBarItemsMap();
+    statusBarItemsMap: RecipeStatusBarItemsMap = new RecipeStatusBarItemsMap();
 
     fsManager: FSManager;
     pluginTreeView: vscode.TreeView<TreeViewItem | undefined>;
@@ -149,7 +151,22 @@ class DSSExtension {
         const recipe = item.dssObject;
         this.statusBarItemsMap.setAsRunning(recipe);
         try {
-            const result = await startRecipe(recipe);
+            const output = await getOuputToBuild(recipe);
+            if (!output) {
+                throw new Error(`Recipe ${recipe.name} can not be run: it has no outputs`);
+            }
+            let partition;
+            if (isPartitioned(output)) {
+                const statusBarPartitionItem = this.statusBarItemsMap.getFromRecipe(recipe);
+                if (statusBarPartitionItem && statusBarPartitionItem.partitionBarItem.text) {
+                    partition = statusBarPartitionItem.partitionBarItem.text;
+                } else {
+                    partition = await promptPartitions(output);
+                    this.statusBarItemsMap.setPartitionToBuild(recipe, partition);
+                }
+            }
+            
+            const result = await startRecipe(recipe, output, partition);
             item.jobId = result.id;
             const outputChannel = vscode.window.createOutputChannel("Job "+ result.id);
             const job = await waitJobToFinish(outputChannel, recipe.projectKey, result.id);
@@ -160,6 +177,18 @@ class DSSExtension {
         } finally {
             this.statusBarItemsMap.setAsRunnable(recipe);
         } 
+    }
+
+    async selectPartitions(textEditor: vscode.TextEditor) {
+        const document = textEditor.document;
+        const item = this.getTreeViewItemFromUri(document.uri) as RecipeFileTreeView;
+        const recipe = item.dssObject;
+        const output = await getOuputToBuild(recipe);
+        if (!output) {
+            throw new Error(`Recipe ${recipe.name} can not be run: it has no outputs`);
+        }
+        const partition = await promptPartitions(output);
+        this.statusBarItemsMap.setPartitionToBuild(recipe, partition);
     }
     
     async abortRecipe(textEditor: vscode.TextEditor) {

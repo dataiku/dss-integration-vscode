@@ -39,8 +39,7 @@ export interface CreationJobDef {
     type: string;
 }
 
-export async function newCreationJobDef(output: RecipeOutput): Promise<CreationJobDef> {
-    const partition = await promptPartitions(output);
+export async function newCreationJobDef(output: RecipeOutput, partition?: string): Promise<CreationJobDef> {
     return {
         type: "NON_RECURSIVE_FORCED_BUILD",
         outputs: [
@@ -81,12 +80,8 @@ export async function waitJobToFinish(outputchannel: OutputChannel, projectKey: 
     return job;
 }
 
-export async function startRecipe(recipe: Recipe): Promise<{id: string}> {
-    const output = await getOuputToBuild(recipe);
-    if (!output) {
-        throw new Error(`Recipe ${recipe.name} can not be run: it has no outputs`);
-    }
-    const body = await newCreationJobDef(output);
+export async function startRecipe(recipe: Recipe, output: RecipeOutput, partition?: string): Promise<{id: string}> {
+    const body = await newCreationJobDef(output, partition);
     const endpoint = "projects/"+ recipe.projectKey + "/jobs/";
     return RequestWrapper.post(endpoint, { body });
 }
@@ -108,9 +103,14 @@ function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function promptPartitions(output: RecipeOutput): Promise<string | undefined> {
-    if (output.partitionableElement.partitioning && output.partitionableElement.partitioning.dimensions.length > 0) {
-        const partitioningDim = output.partitionableElement.partitioning.dimensions;
+export function isPartitioned(output: RecipeOutput): boolean {
+    return output.partitionableElement.partitioning !== undefined 
+        && output.partitionableElement.partitioning.dimensions.length > 0;
+}
+
+export async function promptPartitions(output: RecipeOutput): Promise<string> {
+    if (isPartitioned(output)) {
+        const partitioningDim = output.partitionableElement.partitioning!.dimensions;
         const partitionsStr = partitioningDim.map(dim => dim.name).join("|");
         let newValue = await window.showInputBox({ placeHolder: partitionsStr, prompt: `This recipe requires partitions: ${partitionsStr}` });
         if (newValue) {
@@ -118,5 +118,7 @@ async function promptPartitions(output: RecipeOutput): Promise<string | undefine
         } else {
             throw new Error("No partition given: job not started");
         }
+    } else {
+        throw new Error("This recipe does not need a partition");
     }
 }
