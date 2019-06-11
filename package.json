@@ -24,7 +24,11 @@
 	],
 	"keywords": [
 		"Dataiku",
-		"DSS"
+		"DSS",
+		"AI",
+		"Artificial Intelligence",
+		"Machine Learning",
+		"Data Science"
 	],
 	"activationEvents": [
 		"*"
