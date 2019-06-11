@@ -7,7 +7,7 @@ import { getWebApp, WebApp, getModifiedWebApp } from './api/webapp';
 import { getPluginFileContentAndType, savePluginFile, getPluginItemDetails, removePluginContents, addPluginFolder } from './api/plugin';
 import { waitJobToFinish, abortJob, startRecipe, promptPartitions, isPartitioned } from './api/job';
 import { FSManager, FileDetails } from './fsManager';
-import { RecipeStatusBarItemsMap } from './statusBarItemsMap';
+import { RecipesStatusBarMap } from './statusBarItemsMap';
 import { RecipeRemoteSaver, WebAppRemoteSaver, PluginRemoteSaver } from './remoteSaver';
 import { DSSConfiguration } from './dssConfiguration';
 import { getOuputToBuild } from './api/recipeOutput';
@@ -66,7 +66,7 @@ export function deactivate(): void {
 
 class DSSExtension {
     tabsBinding: TabBinding[] = [];
-    statusBarItemsMap: RecipeStatusBarItemsMap = new RecipeStatusBarItemsMap();
+    statusBarItemsMap: RecipesStatusBarMap = new RecipesStatusBarMap();
 
     fsManager: FSManager;
     pluginTreeView: vscode.TreeView<TreeViewItem | undefined>;
