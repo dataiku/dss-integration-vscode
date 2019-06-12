@@ -170,7 +170,7 @@ class DSSExtension {
             item.jobId = result.id;
             const outputChannel = vscode.window.createOutputChannel("Job "+ result.id);
             const job = await waitJobToFinish(outputChannel, recipe.projectKey, result.id);
-            vscode.window.showInformationMessage(`Job ${result.id} finished with status: ${job.baseStatus.state.toString()}`);
+            vscode.window.showInformationMessage(`Job finished with status: ${job.baseStatus.state.toString()}`);
         } catch (e) {
             vscode.window.showErrorMessage(e.message);
             throw e;
@@ -278,19 +278,21 @@ class DSSExtension {
     }
     
     selectTreeViewItem(textEditor: vscode.TextEditor | undefined) {
-        this.statusBarItemsMap.hideAll();
-        if (!textEditor) {
-            return;
+        if (textEditor && textEditor.document.languageId === "Log") {
+            return; // Open the output window will trigger onDidChangeActiveTextEditor, but we want to silent it
         }
-        let item = this.getTreeViewItemFromUri(textEditor.document.uri);
-        if (item) {
-            if (item instanceof RootPluginFolderTreeView) {
-                this.pluginTreeView.reveal(item);
-            } else {
-                if (item instanceof RecipeFileTreeView) {
-                    this.statusBarItemsMap.showForRecipe(item.dssObject);
+        this.statusBarItemsMap.hideAll();
+        if (textEditor) { // textEditor is undefined when the last active text editor is closed
+            let item = this.getTreeViewItemFromUri(textEditor.document.uri);
+            if (item) {
+                if (item instanceof RootPluginFolderTreeView) {
+                    this.pluginTreeView.reveal(item);
+                } else {
+                    if (item instanceof RecipeFileTreeView) {
+                        this.statusBarItemsMap.showForRecipe(item.dssObject);
+                    }
+                    this.projectTreeView.reveal(item);
                 }
-                this.projectTreeView.reveal(item);
             }
         }
     }

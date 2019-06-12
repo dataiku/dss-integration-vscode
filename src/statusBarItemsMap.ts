@@ -93,7 +93,7 @@ export class RecipesStatusBarMap {
     deleteForRecipe(recipe: Recipe) {
         const statusBarItems = this.getFromRecipe(recipe);
         if (statusBarItems) {
-            statusBarItems.partitionBarItem.dispose();
+            statusBarItems.disposeBarItems();
         }
         this.map.delete(this.keyForRecipe(recipe));
     }
