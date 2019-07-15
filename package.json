@@ -4,7 +4,7 @@
 	"displayName": "Dataiku DSS",
 	"description": "Edit Dataiku DSS recipes, plugins and web apps directly into Visual Studio Code.",
 	"version": "1.0.0",
-	"enableProposedApi": true,
+	"enableProposedApi": false,
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/dataiku/dss-integration-vscode.git"
