@@ -56,10 +56,10 @@ export class WT1 {
     }
  
     private sendEvent(event: WT1Event): void {
-        request.post(this.TRACKER_URL, { body: event })
-            .catch((err) => {
-                console.error(`An error occurred while trying to notify tracker service. ${err}`);
-            });
+        request.post(this.TRACKER_URL, { body: event, json: true })
+        .catch((err) => {
+            console.error(`An error occurred while trying to notify tracker service. ${err}`);
+        });
     }
 }
 
