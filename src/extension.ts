@@ -10,6 +10,8 @@ import { FSManager, FileDetails } from './fsManager';
 import { StatusBarItemsMap } from './statusBarItemsMap';
 import { RecipeRemoteSaver, WebAppRemoteSaver, PluginRemoteSaver } from './remoteSaver';
 import { DSSConfiguration } from './dssConfiguration';
+import { WT1 } from './tracker/wt1';
+import { EventType } from './tracker/eventType';
 
 interface TabBinding {
     uri: vscode.Uri;
@@ -32,7 +34,9 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     const storagePath = String(context.globalStoragePath);
-    dssExtension = new DSSExtension(storagePath, pluginTreeView, projectTreeView, pluginsExplorer, projectsExplorer);
+
+    const wt1 = new WT1(vscode.version);
+    dssExtension = new DSSExtension(storagePath, pluginTreeView, projectTreeView, pluginsExplorer, projectsExplorer, wt1);
     
     /***    COMMANDS   ***/
     vscode.commands.registerCommand('dssProjects.refreshEntry', () => dssExtension.refreshProjects());
@@ -72,18 +76,22 @@ class DSSExtension {
     pluginsTreeDataProvider: PluginsTreeDataProvider;
     projectsTreeDataProvider: ProjectsTreeDataProvider;
 
+    wt1: WT1;
+
     imagePreviewPanelsMap: Map<string, vscode.WebviewPanel> = new Map<string, vscode.WebviewPanel>();
 
     constructor(storagePath: string, 
                 pluginTreeView: vscode.TreeView<TreeViewItem | undefined>,
                 projectTreeView: vscode.TreeView<TreeViewItem | undefined>,
                 pluginsTreeDataProvider: PluginsTreeDataProvider,
-                projectsTreeDataProvider: ProjectsTreeDataProvider) {
+                projectsTreeDataProvider: ProjectsTreeDataProvider,
+                wt1: WT1) {
         this.pluginTreeView = pluginTreeView;
         this.projectTreeView = projectTreeView;
         this.fsManager = new FSManager(storagePath);
         this.pluginsTreeDataProvider = pluginsTreeDataProvider;
         this.projectsTreeDataProvider = projectsTreeDataProvider;
+        this.wt1 = wt1;
     }
 
     refreshOpenDssObject() {
@@ -104,6 +112,8 @@ class DSSExtension {
     async refreshProjects() {
         this.projectsTreeDataProvider.refresh();
         this.refreshOpenDssObject();
+        // TODO find a way to not trigger WT1 when this is call from the extension
+        this.wt1.event(EventType.REFRESH_PROJECT_LIST);
     }
 
     async refreshPlugins() {
@@ -228,7 +238,7 @@ class DSSExtension {
         let item = this.getTreeViewItemFromUri(doc.uri);
         if (item instanceof RecipeFileTreeView) {
             let rnp: RecipeAndPayload = {
-                recipe: (item.dssObject as Recipe),
+                recipe: item.dssObject,
                 payload: doc.getText()
             };
             await new RecipeRemoteSaver(this.fsManager).save(rnp);
