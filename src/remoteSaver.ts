@@ -90,7 +90,9 @@ export class WebAppRemoteSaver extends RemoteSaver<WebApp> {
     }
     
     protected async cancelSave(remoteWebapp: WebApp): Promise<void> {
-        await FileDetails.fromWebApp(remoteWebapp).forEach(file => this.fsManager.saveInFS(file));
+        for (const file of FileDetails.fromWebApp(remoteWebapp)) {
+            await this.fsManager.saveInFS(file);
+        }
     }
 
     protected getConflictMessage(conflictingElement: WebApp): string {
