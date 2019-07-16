@@ -31,9 +31,6 @@ export class StatusBarItemsMap {
         const existingBarItem = this.getFromRecipe(recipe);
         const statusBarItem = vscode.window.createStatusBarItem();
         if (existingBarItem) {
-            statusBarItem.text = recipe.name;
-            statusBarItem.command = statusBarItem.command;
-            statusBarItem.tooltip = statusBarItem.tooltip;
             existingBarItem.show();
         } else {
             this.setFromRecipe(recipe, statusBarItem);

@@ -133,8 +133,8 @@ export class DSSConfiguration {
             await DSSConfiguration.saveConfig(newConfig);
             
             if (newConfig.getUrl() && newConfig.getApiKey())  {
-                vscode.commands.executeCommand("dssPlugins.refreshEntry");
-                vscode.commands.executeCommand("dssProjects.refreshEntry");
+                vscode.commands.executeCommand("dssPlugins.refreshEntry", false);
+                vscode.commands.executeCommand("dssProjects.refreshEntry", false);
             }
         }
     }

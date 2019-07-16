@@ -1,9 +1,11 @@
 import { getRecipeAndPayload, RecipeAndPayload, saveRecipe } from "./api/recipe";
 import { FSManager, FileDetails } from "./fsManager";
-import { window, TextDocument } from "vscode";
+import { window, TextDocument, TreeItem } from "vscode";
 import { roundedFormat } from "./utils";
 import { WebApp, saveWebApp, getWebApp } from "./api/webapp";
 import { PluginItem, savePluginFile, getPluginFileContentAndType, getPluginItemDetails } from "./api/plugin";
+import { WT1 } from "./tracker/wt1";
+import { EventType } from "./tracker/eventType";
 
 abstract class RemoteSaver<T> {
     protected abstract saveInDss(itemToSave: T): Promise<void>;
@@ -12,10 +14,11 @@ abstract class RemoteSaver<T> {
     protected abstract getConflictMessage(conflictingElement: T): string;
     protected abstract printSaveSuccessMsg(): void;
     protected abstract getRemoteObject(localObject: T): Promise<T>;
+    protected abstract getSaveEventType(): EventType;
 
     protected canGetRemoteObject: boolean;
 
-    constructor(protected fsManager: FSManager) {
+    constructor(protected fsManager: FSManager, protected wt1: WT1) {
         this.canGetRemoteObject = true;
     }
     
@@ -25,6 +28,7 @@ abstract class RemoteSaver<T> {
             if (this.hasSameVersion(objectToSave, remoteObject)) {
                 await this.saveInDss(objectToSave);
                 this.printSaveSuccessMsg();
+                this.wt1.event(this.getSaveEventType(), { couldCheckConflict: true, hasConflicted: false });
             } else {
                 const message = this.getConflictMessage(remoteObject);
                 const action = await window.showErrorMessage(message, { modal: true }, SaveAction.SaveAnyway, SaveAction.Discard);
@@ -36,10 +40,12 @@ abstract class RemoteSaver<T> {
                 } else { // Cancel
                     throw new Error("Save cancelled");
                 }
+                this.wt1.event(this.getSaveEventType(), { couldCheckConflict: true, hasConflicted: true, userAction: action });
             }
         } else {
             await this.saveInDss(objectToSave);
             this.printSaveSuccessMsg();
+            this.wt1.event(this.getSaveEventType(), { couldCheckConflict: false,  });
         }
     }
 }
@@ -78,6 +84,10 @@ export class RecipeRemoteSaver extends RemoteSaver<RecipeAndPayload> {
     protected hasSameVersion(rnpLocal: RecipeAndPayload, rnpRemote: RecipeAndPayload): boolean {
         return rnpLocal.recipe.versionTag.versionNumber === rnpRemote.recipe.versionTag.versionNumber;
     }
+
+    protected getSaveEventType() {
+        return EventType.SAVE_RECIPE;
+    }
 }
 
 export class WebAppRemoteSaver extends RemoteSaver<WebApp> {
@@ -111,6 +121,10 @@ export class WebAppRemoteSaver extends RemoteSaver<WebApp> {
     protected hasSameVersion(local: WebApp, remote: WebApp): boolean {
         return local.versionTag.versionNumber === remote.versionTag.versionNumber;
     }
+
+    protected getSaveEventType() {
+        return EventType.SAVE_WEBAPP_FILE;
+    }
 }
 
 export class PluginRemoteSaver extends RemoteSaver<PluginItem> {
@@ -118,8 +132,8 @@ export class PluginRemoteSaver extends RemoteSaver<PluginItem> {
     private text :string;
     private pluginId :string;
     
-    constructor(fsManager: FSManager, pluginId: string, document: TextDocument, isFullyFeatured: boolean) {
-        super(fsManager);
+    constructor(fsManager: FSManager, wt1: WT1, pluginId: string, document: TextDocument, isFullyFeatured: boolean) {
+        super(fsManager, wt1);
         this.pluginId = pluginId;
         this.text = document.getText();
         this.canGetRemoteObject = isFullyFeatured;
@@ -151,5 +165,9 @@ export class PluginRemoteSaver extends RemoteSaver<PluginItem> {
 
     protected hasSameVersion(local: PluginItem, remote: PluginItem): boolean {
         return local.lastModified === remote.lastModified;
+    }
+
+    protected getSaveEventType() {
+        return EventType.SAVE_PLUGIN_FILE;
     }
 }

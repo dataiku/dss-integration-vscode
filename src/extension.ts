@@ -39,13 +39,13 @@ export async function activate(context: vscode.ExtensionContext) {
     dssExtension = new DSSExtension(storagePath, pluginTreeView, projectTreeView, pluginsExplorer, projectsExplorer, wt1);
     
     /***    COMMANDS   ***/
-    vscode.commands.registerCommand('dssProjects.refreshEntry', () => dssExtension.refreshProjects());
+    vscode.commands.registerCommand('dssProjects.refreshEntry', (actionByUser) => dssExtension.refreshProjects(actionByUser));
     vscode.commands.registerCommand('dssProjects.openCodeRecipe', (item: RecipeFileTreeView) => dssExtension.openCodeRecipeFile(item));
     vscode.commands.registerCommand('dssProjects.openWebApp', (item: WebAppFileTreeView) => dssExtension.openWebAppFile(item));
     vscode.commands.registerTextEditorCommand('dssProjects.abortRecipe', (textEditor: vscode.TextEditor) => dssExtension.abortRecipe(textEditor));
     vscode.commands.registerTextEditorCommand('dssProjects.runRecipe', (textEditor: vscode.TextEditor) => dssExtension.runRecipe(textEditor));
 
-    vscode.commands.registerCommand('dssPlugins.refreshEntry', () => dssExtension.refreshPlugins());
+    vscode.commands.registerCommand('dssPlugins.refreshEntry', (actionByUser) => dssExtension.refreshPlugins(actionByUser));
     vscode.commands.registerCommand('dssPlugins.openPluginFile', (item: PluginFileTreeView) => dssExtension.openPluginFile(item));
     vscode.commands.registerCommand("dssPlugins.newFile", (parentItem: PluginFolderTreeView | RootPluginFolderTreeView) => dssExtension.addPluginFile(parentItem));
     vscode.commands.registerCommand("dssPlugins.deleteItem", (item: PluginFileTreeView | PluginFolderTreeView) => dssExtension.deletePluginItem(item));
@@ -60,6 +60,8 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.window.onDidChangeActiveTextEditor((textEditor: vscode.TextEditor | undefined) => dssExtension.selectTreeViewItem(textEditor));
     vscode.workspace.onWillSaveTextDocument((event) => event.waitUntil(dssExtension.saveInDss(event)));
     vscode.workspace.onDidCloseTextDocument((doc: vscode.TextDocument) => dssExtension.documentOnCloseCleanup(doc));
+
+    wt1.event(EventType.START_EXTENSION);
 }
 
 export function deactivate(): void {
@@ -109,16 +111,20 @@ class DSSExtension {
         }   
     }
 
-    async refreshProjects() {
+    async refreshProjects(triggeredByUser: boolean = true) {
         this.projectsTreeDataProvider.refresh();
         this.refreshOpenDssObject();
-        // TODO find a way to not trigger WT1 when this is call from the extension
-        this.wt1.event(EventType.REFRESH_PROJECT_LIST);
+        if (triggeredByUser) {
+            this.wt1.event(EventType.REFRESH_PROJECT_LIST);
+        }
     }
 
-    async refreshPlugins() {
+    async refreshPlugins(triggeredByUser: boolean = true) {
         this.pluginsTreeDataProvider.refresh();
         this.refreshOpenDssObject();
+        if (triggeredByUser) {
+            this.wt1.event(EventType.REFRESH_PLUGIN_LIST);
+        }
     }
 
     async addPluginFolder(parentItem: PluginFolderTreeView | RootPluginFolderTreeView) {
@@ -126,6 +132,7 @@ class DSSExtension {
         if (folderName) {
             try {
                 await this.addPluginItem(parentItem, folderName, true);
+                this.wt1.event(EventType.ADD_PLUGIN_FOLDER);
             } catch (error) {
                 vscode.window.showErrorMessage(`Can not create folder with name ${folderName}`);
             }
@@ -134,7 +141,12 @@ class DSSExtension {
 
     async deletePluginItem(item: PluginFileTreeView | PluginFolderTreeView) {
         await removePluginContents(item.id, item.filePath);
-        vscode.commands.executeCommand("dssPlugins.refreshEntry");
+        if (item instanceof PluginFileTreeView) {
+            this.wt1.event(EventType.DELETE_PLUGIN_FILE);
+        } else {
+            this.wt1.event(EventType.DELETE_PLUGIN_FOLDER);
+        }
+        this.refreshPlugins(false);
         vscode.window.showInformationMessage("File/folder deleted successfully");
     }
     
@@ -143,6 +155,7 @@ class DSSExtension {
         if (filename) {
             try {
                 await this.addPluginItem(parentItem, filename, false);
+                this.wt1.event(EventType.ADD_PLUGIN_FILE);
             } catch {
                 vscode.window.showErrorMessage(`Can not create file with name ${filename}`);
             }
@@ -160,6 +173,7 @@ class DSSExtension {
         this.statusBarItemsMap.setAsRunning(recipe);
         try {
             const result = await startRecipe(recipe);
+            this.wt1.event(EventType.RUN_RECIPE, { recipeType: recipe.type });
             item.jobId = result.id;
             const outputChannel = vscode.window.createOutputChannel("Job "+ result.id);
             const job = await waitJobToFinish(outputChannel, recipe.projectKey, result.id);
@@ -177,6 +191,7 @@ class DSSExtension {
         if (item.jobId) {
             const recipe = item.dssObject;
             await abortJob(recipe.projectKey, item.jobId);
+            this.wt1.event(EventType.ABORT_RECIPE, { recipeType: recipe.type });
             this.statusBarItemsMap.setAsRunnable(recipe);
         } else {
             throw new Error("No job is running for this recipe");
@@ -188,7 +203,8 @@ class DSSExtension {
         const recipeAndPayload = await getRecipeAndPayload(recipe);
         item.dssObject.versionTag = recipeAndPayload.recipe.versionTag;
         const filePath = await this.fsManager.saveInFS(FileDetails.fromRecipe(recipeAndPayload));
-        await this.openTextDocumentSafely(filePath, item);    
+        const document = await this.openTextDocumentSafely(filePath, item);
+        this.wt1.event(EventType.OPEN_RECIPE, { recipeType: recipe.type, lineCount: document.lineCount, languageId: document.languageId }); 
         this.statusBarItemsMap.showForRecipe(recipe);
     }
     
@@ -204,33 +220,35 @@ class DSSExtension {
             }
             panel.reveal();
             panel.webview.html = `<html><body><img src="data:${type};base64,${content}"></body></html>`;
+            this.wt1.event(EventType.OPEN_PLUGIN_FILE, { pluginFileType: type }); 
         } else {
             if (this.pluginsTreeDataProvider.isFullFeatured) {
                 const saved = await getPluginItemDetails(item.id, item.filePath);
                 item.dssObject.lastModified = saved.lastModified;
             }
             const fsPath = await this.fsManager.saveInFS(FileDetails.fromPlugin(pluginId, item.filePath, content));
-            this.openTextDocumentSafely(fsPath, item);
+            const document = await this.openTextDocumentSafely(fsPath, item);
+            this.wt1.event(EventType.OPEN_PLUGIN_FILE, { pluginFileType: type, languageId: document.languageId, lineCount: document.lineCount }); 
         }
     }
     
-    openWebAppFile(item: WebAppFileTreeView) {
-        getWebApp(item.parent.dssObject).then((webApp: WebApp) => {
-            item.dssObject.versionTag = webApp.versionTag;
-            const files = FileDetails.fromWebApp(webApp);
-            for (const file of files) {
-                if (file.name === item.label) {
-                    this.fsManager.saveInFS(file).then((filePath: string) => {
-                        this.openTextDocumentSafely(filePath, item);
-                    });
-                }
+    async openWebAppFile(item: WebAppFileTreeView) {
+        const webApp = await getWebApp(item.parent.dssObject);
+        item.dssObject.versionTag = webApp.versionTag;
+        const files = FileDetails.fromWebApp(webApp);
+        for (const file of files) {
+            if (file.name === item.label) {
+                const filePath = await this.fsManager.saveInFS(file);
+                const document = await this.openTextDocumentSafely(filePath, item);
+                this.wt1.event(EventType.OPEN_PLUGIN_FILE, { lineCount: document.lineCount, languageId: document.languageId }); 
             }
-        });
+        }
     }
     
-    async openTextDocumentSafely(filePath: string, item: TreeViewItem): Promise<void> {
+    async openTextDocumentSafely(filePath: string, item: TreeViewItem): Promise<vscode.TextDocument> {
         const textEditor = await this.openTextDocument(filePath);
         this.addTabBinding(textEditor, item);
+        return textEditor.document;
     }
     
     async saveInDss(event: vscode.TextDocumentWillSaveEvent) {
@@ -241,16 +259,16 @@ class DSSExtension {
                 recipe: item.dssObject,
                 payload: doc.getText()
             };
-            await new RecipeRemoteSaver(this.fsManager).save(rnp);
+            await new RecipeRemoteSaver(this.fsManager, this.wt1).save(rnp);
             const saved = await getRecipeAndPayload(rnp.recipe);
             item.dssObject.versionTag = saved.recipe.versionTag;
         } else if (item instanceof WebAppFileTreeView) { 
             const webAppNew = getModifiedWebApp(item.dssObject, item.label, doc.getText());
-            await new WebAppRemoteSaver(this.fsManager).save(webAppNew);
+            await new WebAppRemoteSaver(this.fsManager, this.wt1).save(webAppNew);
             const saved = await getWebApp(webAppNew);
             item.dssObject.versionTag = saved.versionTag;
         } else if (item instanceof PluginFileTreeView) {
-            await new PluginRemoteSaver(this.fsManager, item.id, doc, this.pluginsTreeDataProvider.isFullFeatured).save(item.dssObject);
+            await new PluginRemoteSaver(this.fsManager, this.wt1, item.id, doc, this.pluginsTreeDataProvider.isFullFeatured).save(item.dssObject);
             if (this.pluginsTreeDataProvider.isFullFeatured) {
                 const saved = await getPluginItemDetails(item.id, item.filePath);
                 item.dssObject.lastModified = saved.lastModified;
@@ -300,7 +318,7 @@ class DSSExtension {
         } else {
             await savePluginFile(parentItem.id, path, "");
         }
-        vscode.commands.executeCommand("dssPlugins.refreshEntry");
+        this.refreshPlugins(false);
     }
 
     private addTabBinding(textEditor: vscode.TextEditor, item: TreeViewItem) {

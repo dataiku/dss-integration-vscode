@@ -4,10 +4,9 @@ export enum EventType {
     REFRESH_PROJECT_LIST="refresh-project-list",
     REFRESH_PLUGIN_LIST="refresh-plugin-list",
 
-    OPEN_PROJECT="open-project",
-    OPEN_PLUGIN="open-plugin",
     OPEN_WEBAPP="open-webapp",
     OPEN_RECIPE="open-recipe",
+    OPEN_PLUGIN_FILE="open-plugin-file",
 
     SAVE_RECIPE="save-recipe",
     SAVE_WEBAPP_FILE="save-webapp-file",

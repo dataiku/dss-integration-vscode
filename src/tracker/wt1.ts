@@ -24,28 +24,33 @@ export class WT1 {
     }
 
     event(eventType: EventType, params?: any) {
-        if (!params) {
-            params = {};
+        try {
+            if (!params) {
+                params = {};
+            }
+            params.type = this.EVENT_NAME_PREFIX + eventType;
+    
+            const event: WT1Event = {
+                sessionId: this.sessionId,
+                visitorId: this.getVisitorId(),
+                sparams: stringify({
+                    os: this.osType, 
+                    extensionVersion: this.extensionVersion,
+                    vsCodeVersion: this.vsCodeVersion,
+                }),
+                clientLang: process.env.LANG,
+                events: [{
+                    type: "event",
+                    clientTS: new Date().getTime(),
+                    params: stringify(params),
+                    page: this.PAGE,
+                }]
+            };
+            this.sendEvent(event);
+        } catch {
+            // Silent error, don't want the error to be shown to the user
         }
-        params.type = this.EVENT_NAME_PREFIX + eventType;
-
-        const event: WT1Event = {
-            sessionId: this.sessionId,
-            visitorId: this.getVisitorId(),
-            sparams: stringify({
-                os: this.osType, 
-                extensionVersion: this.extensionVersion,
-                vsCodeVersion: this.vsCodeVersion,
-            }),
-            clientLang: process.env.LANG,
-            events: [{
-                type: "event",
-                clientTS: new Date().getTime(),
-                params: stringify(params),
-                page: this.PAGE,
-            }]
-       };
-       this.sendEvent(event);
+        
     }
 
     private generateRandomSessionId(): string {
@@ -54,12 +59,12 @@ export class WT1 {
 
     private getVisitorId(): string {
         const apiKey = DSSConfiguration.getAPIKey();
-        return createHash("sha256").update(apiKey).digest('hex');
+        const url = DSSConfiguration.getUrl();
+        return createHash("sha256").update(url+apiKey).digest('hex');
     }
  
     private sendEvent(event: WT1Event): void {
-        request.post(this.TRACKER_URL, { body: event, json: true })
-        .catch((err) => {
+        request.post(this.TRACKER_URL, { body: event, json: true }).catch((err) => {
             console.error(`An error occurred while trying to notify tracker service. ${err}`);
         });
     }
