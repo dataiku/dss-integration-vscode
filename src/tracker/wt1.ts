@@ -13,6 +13,7 @@ export class WT1 {
     private extensionVersion: string;
     private vsCodeVersion: string;
     private readonly TRACKER_URL = "http://tracker.dataiku.com/public/events";
+    private readonly PAGE="http://vscode.dataiku.com";
     private readonly EVENT_NAME_PREFIX = "vscode-";
 
     constructor(vsCodeVersion: string) {
@@ -41,6 +42,7 @@ export class WT1 {
                 type: "event",
                 clientTS: new Date().getTime(),
                 params: stringify(params),
+                page: this.PAGE,
             }]
        };
        this.sendEvent(event);
@@ -73,5 +75,6 @@ export interface WT1Event {
             type : "event" | "page";
             clientTS : number;
             params: string;
+            page: string;
         }>;
 }
