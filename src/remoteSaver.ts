@@ -26,7 +26,7 @@ abstract class RemoteSaver<T> {
                 await this.saveInDss(objectToSave);
                 this.printSaveSuccessMsg();
             } else {
-                const message = await this.getConflictMessage(remoteObject);
+                const message = this.getConflictMessage(remoteObject);
                 const action = await window.showErrorMessage(message, { modal: true }, SaveAction.SaveAnyway, SaveAction.Discard);
                 if (action === SaveAction.SaveAnyway.toString()) {
                     await this.saveInDss(objectToSave);
