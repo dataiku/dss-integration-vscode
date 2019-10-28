@@ -41,6 +41,8 @@ export class RequestWrapper {
             requestOptions.body = options.body;
             requestOptions.resolveWithFullResponse = options.resolveWithFullResponse;
             requestOptions.encoding = options.encoding;
+        } else {
+            requestOptions.json = true;
         }
         requestOptions.strictSSL = !this.getNoCheckCertificate();
         requestOptions.method = method;
