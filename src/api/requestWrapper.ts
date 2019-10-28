@@ -8,6 +8,7 @@ interface Options {
     headers?: any;
     resolveWithFullResponse?: boolean;
     encoding?: string | null;
+    strictSSL?: boolean;
 }
 
 export class HttpError extends Error {
@@ -34,17 +35,18 @@ export class RequestWrapper {
     }
 
     private static async request<T>(method: string, endpoint: string, options?: Options): Promise<T> {
-        if (!options) {
-            options = {}; 
+        let requestOptions: Options = {};
+        if (options) {
+            requestOptions.json = (options.json === undefined) ? true : options.json;
+            requestOptions.body = options.body;
+            requestOptions.resolveWithFullResponse = options.resolveWithFullResponse;
+            requestOptions.encoding = options.encoding;
         }
-        if (options.json === undefined) {
-            options.json = true;
-        }
-
-        options.method = method;
-        options.headers = this.authHeader();
+        requestOptions.strictSSL = !this.getNoCheckCertificate();
+        requestOptions.method = method;
+        requestOptions.headers = this.authHeader();
         return new Promise((resolve, reject) => {
-            request(this.baseUrl() + endpoint, options)
+            request(this.baseUrl() + endpoint, requestOptions)
                 .then(resolve)
                 .catch((error) => {
                     console.error(error);
@@ -78,5 +80,13 @@ export class RequestWrapper {
         return {
             "Authorization" : auth,
         };
+    }
+
+    private static getNoCheckCertificate(): boolean {
+        let result = DSSConfiguration.getNoCheckCertificate();
+        if (result === undefined) {
+            return false;
+        }
+        return result;
     }
 }
