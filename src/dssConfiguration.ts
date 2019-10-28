@@ -37,7 +37,7 @@ class LocalConfig {
             return this.getUrl();
         } else if (key === "api_key"){
             return this.getApiKey();
-        }  else {
+        } else {
             throw new Error("Dataiku DSS: Should not happend");
         }
     }
@@ -56,6 +56,10 @@ class LocalConfig {
             throw new Error(DSSConfiguration.MALFORMED_CONFIG_FILE_ERR);
         }
         return apiKey;
+    }
+
+    getNoCheckCertificate(): boolean {
+        return this.getDefaultConfig().no_check_certificate;
     }
 }
 
@@ -99,6 +103,21 @@ export class DSSConfiguration {
         throw new Error(DSSConfiguration.NO_API_KEY_ERR);
     }
 
+    static getNoCheckCertificate(): boolean {
+        const fromFile = this.getConfigFromFS();
+        if (fromFile) {
+            const result = fromFile.getNoCheckCertificate();
+            if (result) {
+                return result;
+            }
+        }
+        const fromEnvVar = this.getNoCheckCertificateEnvVar();
+        if (fromEnvVar) {
+            return fromEnvVar.toLowerCase() === "true";
+        }
+        return false;
+    }
+
     static async setUrlFromUserInut(): Promise<void> {
         await DSSConfiguration.modifyConfigFromUserInput("url", "Enter the URL of the DSS instance");
     }
@@ -109,10 +128,10 @@ export class DSSConfiguration {
 
     static setCheckCertificate(active: boolean): void {
         let currentConfig = DSSConfiguration.getConfigFromFS();
-        if (! currentConfig) {
+        if (!currentConfig) {
             currentConfig = new LocalConfig(); 
         }
-        currentConfig.getDefaultConfig()["no_check_certificate"] = !active;
+        currentConfig.getDefaultConfig().no_check_certificate = !active;
         DSSConfiguration.saveConfig(currentConfig);
     }
 
@@ -171,4 +190,7 @@ export class DSSConfiguration {
         return process.env.DKU_API_KEY;
     }
 
+    private static getNoCheckCertificateEnvVar(): string | undefined {
+        return process.env.DKU_NO_CHECK_CERTIFICATE;
+    }
 }
