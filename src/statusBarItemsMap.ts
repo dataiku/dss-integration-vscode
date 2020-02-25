@@ -1,71 +1,121 @@
 import * as vscode from "vscode";
 import { Recipe } from "./api/recipe";
 
-export class StatusBarItemsMap {
-    private map: Map<string, vscode.StatusBarItem>;
+class RecipeStatusBar {
+    runBarItem: vscode.StatusBarItem;
+    partitionBarItem: vscode.StatusBarItem;
+
+    constructor(runBarItem: vscode.StatusBarItem, partitionBarItem: vscode.StatusBarItem) {
+        this.runBarItem = runBarItem;
+        this.partitionBarItem = partitionBarItem;
+    }
+
+    hideBarItems() {
+        this.runBarItem.hide();
+        this.partitionBarItem.hide();
+    }
+
+    showBarItems() {
+        this.runBarItem.show();
+        this.partitionBarItem.show();
+    }
+
+    disposeBarItems() {
+        this.runBarItem.dispose();
+        this.partitionBarItem.show();
+    }
+
+    setAsRunnable(recipeName: string) {
+        this.partitionBarItem.hide();
+        this.runBarItem.text = "$(play) Run " + recipeName;
+        this.runBarItem.command = "dssProjects.runRecipe";
+        this.runBarItem.tooltip = "Run this recipe in DSS";
+        this.showBarItems();
+    }
+
+    setPartitionToBuild(partitions: string) {
+        this.hideBarItems();
+        this.partitionBarItem.text = partitions;
+        this.partitionBarItem.command = "dssProjects.selectPartitions";
+        this.partitionBarItem.tooltip = "Select the partitions to build";
+        this.showBarItems();
+    }
+
+    setAsRunning() {
+        this.hideBarItems();
+        this.runBarItem.text = "$(primitive-square) Abort";
+        this.runBarItem.command = "dssProjects.abortRecipe";
+        this.showBarItems();
+    }
+}
+
+export class RecipesStatusBarMap {
+    private map: Map<string, RecipeStatusBar>;
 
     constructor() {
-        this.map = new Map<string, vscode.StatusBarItem>();
+        this.map = new Map<string, RecipeStatusBar>();
     }
-    getFromRecipe(recipe: Recipe): vscode.StatusBarItem | undefined {
+
+    getFromRecipe(recipe: Recipe): RecipeStatusBar | undefined {
         return this.map.get(this.keyForRecipe(recipe));
     }
 
-    setFromRecipe(recipe: Recipe, statusBarItem: vscode.StatusBarItem): void {
-        this.map.set(this.keyForRecipe(recipe), statusBarItem);
+    setFromRecipe(recipe: Recipe, statusBarItems: RecipeStatusBar): void {
+        this.map.set(this.keyForRecipe(recipe), statusBarItems);
     }
 
     hideAll() {
-        this.map.forEach((statusBar) => {
-            statusBar.hide();
-        });
+        for (const recipeStatusBar of this.map.values()) {
+            recipeStatusBar.hideBarItems();
+        }
     }
 
     disposeAll() {
-        this.map.forEach((statusBar) => {
-            statusBar.dispose();
+        this.map.forEach((recipeStatusBar) => {
+            recipeStatusBar.disposeBarItems();
         });
     }
 
     showForRecipe(recipe: Recipe) {
-        const existingBarItem = this.getFromRecipe(recipe);
-        const statusBarItem = vscode.window.createStatusBarItem();
-        if (existingBarItem) {
-            statusBarItem.text = recipe.name;
-            statusBarItem.command = statusBarItem.command;
-            statusBarItem.tooltip = statusBarItem.tooltip;
-            existingBarItem.show();
+        const existingRecipeStatusBar = this.getFromRecipe(recipe);
+
+        if (existingRecipeStatusBar) {
+            existingRecipeStatusBar.showBarItems();
         } else {
-            this.setFromRecipe(recipe, statusBarItem);
-            this.setAsRunnable(recipe);
-            statusBarItem.show();
+            const newRecipeStatusBar  = new RecipeStatusBar(vscode.window.createStatusBarItem(),
+                                                            vscode.window.createStatusBarItem());
+            newRecipeStatusBar.setAsRunnable(recipe.name);
+            newRecipeStatusBar.setPartitionToBuild("");
+            this.setFromRecipe(recipe, newRecipeStatusBar);
         }
     }
 
     deleteForRecipe(recipe: Recipe) {
-        const statusBar = this.getFromRecipe(recipe);
-        if (statusBar) {
-            statusBar.dispose();
+        const statusBarItems = this.getFromRecipe(recipe);
+        if (statusBarItems) {
+            statusBarItems.disposeBarItems();
         }
         this.map.delete(this.keyForRecipe(recipe));
     }
 
     setAsRunning(recipe: Recipe) {
-        const statusBar = this.getFromRecipe(recipe);
-        if (statusBar) {
-            statusBar.text = "$(primitive-square) Abort";
-            statusBar.command = "dssProjects.abortRecipe";
-            statusBar.show();
+        const statusBarItems = this.getFromRecipe(recipe);
+        if (statusBarItems) {
+           statusBarItems.setAsRunning();
         }
     }
 
     setAsRunnable(recipe: Recipe) {
-        const statusBar = this.getFromRecipe(recipe);
-        if (statusBar) {
-            statusBar.text = "$(play) Run " + recipe.name;
-            statusBar.command = "dssProjects.runRecipe";
-            statusBar.tooltip = "Run this recipe in DSS";
-            statusBar.show();
+        const statusBarItems = this.getFromRecipe(recipe);
+        if (statusBarItems) {
+            statusBarItems.setAsRunnable(recipe.name);
+        }
+    }
+
+    setPartitionToBuild(recipe: Recipe, partitions?: string) {
+        const statusBarItems = this.getFromRecipe(recipe);
+        if (statusBarItems && partitions) {
+            statusBarItems.setPartitionToBuild(partitions);
         }
     }
 

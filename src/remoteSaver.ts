@@ -1,5 +1,5 @@
 import { getRecipeAndPayload, RecipeAndPayload, saveRecipe } from "./api/recipe";
-import { FSManager, FileDetails } from "./fsManager";
+import { FSManager, FileDetails } from "./FSManager";
 import { window, TextDocument } from "vscode";
 import { roundedFormat } from "./utils";
 import { WebApp, saveWebApp, getWebApp } from "./api/webapp";

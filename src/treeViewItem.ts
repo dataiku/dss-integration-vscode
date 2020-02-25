@@ -1,4 +1,4 @@
-import { FileDetails } from "./fsManager";
+import { FileDetails } from "./FSManager";
 import { Project } from "./api/project";
 import { Recipe, getCodeRecipes } from "./api/recipe";
 import { WebAppDetails, getWebApps, getWebApp, WebApp } from "./api/webapp";
