@@ -2,6 +2,10 @@
 
 All notable changes to the "dataiku-dss" extension will be documented in this file.
 
+## 1.1.0 - April 12, 2019
+
+- Remember the last built partitions. Avoid having to type the partitions every type you run a recipe with partitioned output dataset.
+
 ## 1.0.2 - October 28, 2019
 
 - Fixed issue where "check_no_certificate" was not taken into account when connecting to DSS.
