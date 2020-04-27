@@ -31,5 +31,6 @@ export const dssLanguageIdToFileType: any = {
     "sparkr": "r",
     "pyspark": "py",
     "spark_sql_query": "sql",
-    "spark_scala": "scala"
+    "spark_scala": "scala",
+    "hive": "hive"
 };
