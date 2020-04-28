@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
-import { TreeViewItem, RecipeFileTreeView, WebAppFileTreeView, RootPluginFolderTreeView, PluginFileTreeView, PluginFolderTreeView } from './treeViewItem';
+import { TreeViewItem, RecipeFileTreeView, WebAppFileTreeView, WikiArticleTreeView, RootPluginFolderTreeView, PluginFileTreeView, PluginFolderTreeView } from './treeViewItem';
 import { ProjectsTreeDataProvider } from './projectsTreeDataProvider';
 import { PluginsTreeDataProvider } from './pluginsTreeDataProvider';
 import { Recipe, RecipeAndPayload, getRecipeAndPayload } from './api/recipe';
 import { getWebApp, WebApp, getModifiedWebApp } from './api/webapp';
+import { getWikiArticle } from './api/wiki';
 import { getPluginFileContentAndType, savePluginFile, getPluginItemDetails, removePluginContents, addPluginFolder } from './api/plugin';
 import { waitJobToFinish, abortJob, startRecipe, promptPartitions, isPartitioned } from './api/job';
 import { FSManager, FileDetails } from './FSManager';
@@ -39,6 +40,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('dssProjects.refreshEntry', () => dssExtension.refreshProjects());
     vscode.commands.registerCommand('dssProjects.openCodeRecipe', (item: RecipeFileTreeView) => dssExtension.openCodeRecipeFile(item));
     vscode.commands.registerCommand('dssProjects.openWebApp', (item: WebAppFileTreeView) => dssExtension.openWebAppFile(item));
+    vscode.commands.registerCommand('dssProjects.openWikiArticle', (item: WikiArticleTreeView) => dssExtension.openWikiArticleFile(item));
     vscode.commands.registerTextEditorCommand('dssProjects.abortRecipe', (textEditor: vscode.TextEditor) => dssExtension.abortRecipe(textEditor));
     vscode.commands.registerTextEditorCommand('dssProjects.runRecipe', (textEditor: vscode.TextEditor) => dssExtension.runRecipe(textEditor));
     vscode.commands.registerTextEditorCommand('dssProjects.selectPartitions', (textEditor: vscode.TextEditor) => dssExtension.selectPartitions(textEditor));
@@ -99,6 +101,8 @@ class DSSExtension {
                 this.openCodeRecipeFile(treeViewItem);
             } else if (treeViewItem instanceof WebAppFileTreeView) {
                 this.openWebAppFile(treeViewItem);
+            } else if (treeViewItem instanceof WikiArticleTreeView) {
+                this.openWikiArticleFile(treeViewItem);
             }
         }   
     }
@@ -245,6 +249,12 @@ class DSSExtension {
                 }
             }
         });
+    }
+    
+    async openWikiArticleFile(item: WikiArticleTreeView) {
+        item.dssObject = await getWikiArticle(item.dssObject.article.projectKey, item.dssObject.article.id);
+        const filePath = await this.fsManager.saveInFS(FileDetails.fromWikiArticle(item.dssObject));
+        await this.openTextDocumentSafely(filePath, item);    
     }
     
     async openTextDocumentSafely(filePath: string, item: TreeViewItem): Promise<void> {

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { Project, getProjectsWithVersion } from './api/project';
-import { TreeViewItem, sortTreeViewItems, RecipeFileTreeView, WebAppFileTreeView, ProjectsFolderTreeView } from './treeViewItem';
+import { TreeViewItem, sortTreeViewItems, RecipeFileTreeView, WebAppFileTreeView, ProjectsFolderTreeView, WikiArticleTreeView } from './treeViewItem';
 import { canEditWebApp } from './api/utils';
 
 
@@ -47,7 +47,13 @@ export class ProjectsTreeDataProvider implements vscode.TreeDataProvider<TreeVie
             };
         } else if (item instanceof ProjectsFolderTreeView) {
 
-        } 
+        } else if (item instanceof WikiArticleTreeView) {
+            treeItem.command = {
+                command: "dssProjects.openWikiArticle",
+                title: "Open wiki article",
+                arguments: [item]
+            };
+        }
         return treeItem;
 	}
 

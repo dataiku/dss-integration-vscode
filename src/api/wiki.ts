@@ -1,3 +1,4 @@
+import { VersionTag } from "./versionTag";
 import { RequestWrapper } from "./requestWrapper";
 
 export interface Wiki {
@@ -20,6 +21,7 @@ export interface WikiArticle {
         name: string;
         layout: string;
         tags: string[];
+        versionTag: VersionTag;
     }
     payload: string;
 }
