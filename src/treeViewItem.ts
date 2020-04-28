@@ -2,6 +2,7 @@ import { FileDetails } from "./FSManager";
 import { Project } from "./api/project";
 import { Recipe, getCodeRecipes } from "./api/recipe";
 import { WebAppDetails, getWebApps, getWebApp, WebApp } from "./api/webapp";
+import { getWiki, getWikiArticlesWithTaxonomies, WikiArticleWithTaxonomy, WikiTaxonomy, WikiArticle } from "./api/wiki";
 import { Plugin, PluginItem, getPluginContents } from "./api/plugin";
 
 const supportedExtensions = ['css', 'html', 'js', 'json', 'txt'];
@@ -33,9 +34,9 @@ export class ProjectsFolderTreeView implements TreeViewItem {
 
     async getChildren(): Promise<TreeViewItem[]> {
         if (this.canEditWebApp) {
-            return [new RecipesFolderTreeView(this), new WebAppsFolderTreeView(this)];         
+            return [new RecipesFolderTreeView(this), new WebAppsFolderTreeView(this), new WikiFolderTreeView(this)];         
         } else {
-            return [new RecipesFolderTreeView(this)];
+            return [new RecipesFolderTreeView(this), new WikiFolderTreeView(this)];
         }
     }
 }
@@ -145,6 +146,54 @@ export class WebAppFileTreeView implements TreeViewItem {
 
     getChildren(): TreeViewItem[] | Thenable<TreeViewItem[]> {
         throw new Error("Method not implemented.");
+    }
+}
+
+export class WikiFolderTreeView implements TreeViewItem {
+    label: string;    
+    iconName: string;
+    collapsible: boolean;
+    parent: ProjectsFolderTreeView;
+
+    constructor(parentItem: ProjectsFolderTreeView) {
+        this.label = "Wikis";
+        this.iconName = "wiki";
+        this.collapsible = true;
+        this.parent = parentItem;
+    }
+
+    async getChildren(): Promise<TreeViewItem[]> {
+        const wiki = await getWiki(this.parent.dssObject.projectKey);
+        const wikiArticlesWithTaxonomies = await getWikiArticlesWithTaxonomies(this.parent.dssObject.projectKey, wiki.taxonomy);
+        return wikiArticlesWithTaxonomies.map((wikiArticleWithTaxonomy) => {
+            return new WikiArticleTreeView(wikiArticleWithTaxonomy, this);
+        }).sort(sortTreeViewItems);
+    }
+}
+
+export class WikiArticleTreeView implements TreeViewItem {
+    label: string;
+    iconName: string;
+    collapsible: boolean;
+    parent: WikiFolderTreeView | WikiArticleTreeView;
+    taxonomy: WikiTaxonomy;
+    dssObject: WikiArticle;
+
+    constructor(wikiArticleWithTaxonomy: WikiArticleWithTaxonomy, parentItem: WikiFolderTreeView | WikiArticleTreeView) {
+        this.dssObject = wikiArticleWithTaxonomy.article;
+        this.label = this.dssObject.article.name;
+        this.iconName = 'wiki';
+        this.parent = parentItem;
+        this.taxonomy = wikiArticleWithTaxonomy.taxonomy;
+
+        this.collapsible = this.taxonomy.children.length ? true: false;
+    }
+
+    async getChildren(): Promise<TreeViewItem[]> {
+        const wikiArticlesWithTaxonomies = await getWikiArticlesWithTaxonomies(this.dssObject.article.projectKey, this.taxonomy.children);
+        return wikiArticlesWithTaxonomies.map((wikiArticleWithTaxonomy) => {
+            return new WikiArticleTreeView(wikiArticleWithTaxonomy, this);
+        }).sort(sortTreeViewItems);
     }
 }
 
