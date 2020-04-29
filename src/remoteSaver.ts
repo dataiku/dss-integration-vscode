@@ -4,6 +4,7 @@ import { window, TextDocument } from "vscode";
 import { roundedFormat } from "./utils";
 import { WebApp, saveWebApp, getWebApp } from "./api/webapp";
 import { PluginItem, savePluginFile, getPluginFileContentAndType, getPluginItemDetails } from "./api/plugin";
+import { WikiArticle, getWikiArticle, saveWikiArticle } from "./api/wiki";
 
 abstract class RemoteSaver<T> {
     protected abstract saveInDss(itemToSave: T): Promise<void>;
@@ -108,6 +109,37 @@ export class WebAppRemoteSaver extends RemoteSaver<WebApp> {
 
     protected hasSameVersion(local: WebApp, remote: WebApp): boolean {
         return local.versionTag.versionNumber === remote.versionTag.versionNumber;
+    }
+}
+
+export class WikiArticleRemoteSaver extends RemoteSaver<WikiArticle> {
+    protected async printSaveSuccessMsg() {
+        window.showInformationMessage(`The wiki article has been saved in DSS!`);
+    }
+
+    protected async saveInDss(WikiArticle: WikiArticle): Promise<void> {
+        await saveWikiArticle(WikiArticle);
+    }
+
+    protected async cancelSave(remoteWikiArticle: WikiArticle): Promise<void> {
+        await this.fsManager.saveInFS(FileDetails.fromWikiArticle(remoteWikiArticle));
+    }
+
+    protected getConflictMessage(conflictingElement: WikiArticle): string {
+        const lastModifier = conflictingElement.article.versionTag.lastModifiedBy.login;
+        const lastModification = roundedFormat((Date.now() - conflictingElement.article.versionTag.lastModifiedOn));
+
+        let message = "This wiki article is being edited by more than one user.\n";
+        message += "It has been modified about "+ lastModification + " ago by "+ lastModifier +".\n";
+        return message;
+    }
+
+    protected async getRemoteObject(localWikiArticle: WikiArticle): Promise<WikiArticle> {
+        return await getWikiArticle(localWikiArticle.article.projectKey, localWikiArticle.article.id);
+    }
+
+    protected hasSameVersion(localWikiArticle: WikiArticle, remoteWikiArticle: WikiArticle): boolean {
+        return localWikiArticle.article.versionTag.versionNumber === remoteWikiArticle.article.versionTag.versionNumber;
     }
 }
 

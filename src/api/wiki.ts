@@ -52,3 +52,8 @@ export async function getWikiArticlesWithTaxonomies(projectKey: string, wikiTaxo
     }
     return wikiArticlesWithTaxonomies;
 }
+
+export function saveWikiArticle(wikiArticle: WikiArticle): Promise<void> {
+    const endpoint = "/projects/" + wikiArticle.article.projectKey + "/wiki/" + wikiArticle.article.id;
+    return RequestWrapper.put(endpoint, { body: wikiArticle });
+}

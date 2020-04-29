@@ -4,12 +4,12 @@ import { ProjectsTreeDataProvider } from './projectsTreeDataProvider';
 import { PluginsTreeDataProvider } from './pluginsTreeDataProvider';
 import { Recipe, RecipeAndPayload, getRecipeAndPayload } from './api/recipe';
 import { getWebApp, WebApp, getModifiedWebApp } from './api/webapp';
-import { getWikiArticle } from './api/wiki';
+import { getWikiArticle, WikiArticle } from './api/wiki';
 import { getPluginFileContentAndType, savePluginFile, getPluginItemDetails, removePluginContents, addPluginFolder } from './api/plugin';
 import { waitJobToFinish, abortJob, startRecipe, promptPartitions, isPartitioned } from './api/job';
 import { FSManager, FileDetails } from './FSManager';
 import { RecipesStatusBarMap } from './statusBarItemsMap';
-import { RecipeRemoteSaver, WebAppRemoteSaver, PluginRemoteSaver } from './remoteSaver';
+import { RecipeRemoteSaver, WebAppRemoteSaver, WikiArticleRemoteSaver, PluginRemoteSaver } from './remoteSaver';
 import { DSSConfiguration } from './dssConfiguration';
 import { getOuputToBuild } from './api/recipeOutput';
 
@@ -284,6 +284,14 @@ class DSSExtension {
                 const saved = await getPluginItemDetails(item.id, item.filePath);
                 item.dssObject.lastModified = saved.lastModified;
             }
+        } else if (item instanceof WikiArticleTreeView) {
+            let wikiArticle: WikiArticle = {
+                article: item.dssObject.article,
+                payload: doc.getText() 
+            };
+            await new WikiArticleRemoteSaver(this.fsManager).save(wikiArticle);
+            const saved = await getWikiArticle(item.dssObject.article.projectKey, item.dssObject.article.id);
+            item.dssObject.article.versionTag = saved.article.versionTag;
         }
     }
     

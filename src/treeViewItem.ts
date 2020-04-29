@@ -156,7 +156,7 @@ export class WikiFolderTreeView implements TreeViewItem {
     parent: ProjectsFolderTreeView;
 
     constructor(parentItem: ProjectsFolderTreeView) {
-        this.label = "Wikis";
+        this.label = "Wiki";
         this.iconName = "wiki";
         this.collapsible = true;
         this.parent = parentItem;
