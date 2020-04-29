@@ -26,6 +26,11 @@ export interface WikiArticle {
     payload: string;
 }
 
+export interface NewWikiArticle {
+    projectKey: string;
+    name: string;
+    parent?: string;
+}
 
 export interface WikiArticleWithTaxonomy {
     article: WikiArticle;
@@ -56,4 +61,15 @@ export async function getWikiArticlesWithTaxonomies(projectKey: string, wikiTaxo
 export function saveWikiArticle(wikiArticle: WikiArticle): Promise<void> {
     const endpoint = "/projects/" + wikiArticle.article.projectKey + "/wiki/" + wikiArticle.article.id;
     return RequestWrapper.put(endpoint, { body: wikiArticle });
+}
+
+export function createWikiArticle(projectKey: string, name: string, parent?: string): Promise<void> {
+    const endpoint = "/projects/" + projectKey + "/wiki/"
+    const body: NewWikiArticle = {
+        projectKey: projectKey,
+        name: name
+    };
+    if (parent)
+        body.parent = parent;
+    return RequestWrapper.post(endpoint, {body: body})
 }

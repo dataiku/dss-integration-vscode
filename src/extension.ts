@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
-import { TreeViewItem, RecipeFileTreeView, WebAppFileTreeView, WikiArticleTreeView, RootPluginFolderTreeView, PluginFileTreeView, PluginFolderTreeView } from './treeViewItem';
+import { TreeViewItem, RecipeFileTreeView, WebAppFileTreeView, WikiFolderTreeView, WikiArticleTreeView, RootPluginFolderTreeView, PluginFileTreeView, PluginFolderTreeView } from './treeViewItem';
 import { ProjectsTreeDataProvider } from './projectsTreeDataProvider';
 import { PluginsTreeDataProvider } from './pluginsTreeDataProvider';
 import { Recipe, RecipeAndPayload, getRecipeAndPayload } from './api/recipe';
 import { getWebApp, WebApp, getModifiedWebApp } from './api/webapp';
-import { getWikiArticle, WikiArticle } from './api/wiki';
+import { getWikiArticle, WikiArticle, createWikiArticle } from './api/wiki';
 import { getPluginFileContentAndType, savePluginFile, getPluginItemDetails, removePluginContents, addPluginFolder } from './api/plugin';
 import { waitJobToFinish, abortJob, startRecipe, promptPartitions, isPartitioned } from './api/job';
 import { FSManager, FileDetails } from './FSManager';
@@ -41,6 +41,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('dssProjects.openCodeRecipe', (item: RecipeFileTreeView) => dssExtension.openCodeRecipeFile(item));
     vscode.commands.registerCommand('dssProjects.openWebApp', (item: WebAppFileTreeView) => dssExtension.openWebAppFile(item));
     vscode.commands.registerCommand('dssProjects.openWikiArticle', (item: WikiArticleTreeView) => dssExtension.openWikiArticleFile(item));
+    vscode.commands.registerCommand("dssProjects.createWikiArticle", (parentItem: WikiFolderTreeView | WikiArticleTreeView) => dssExtension.addWikiArticle(parentItem));
     vscode.commands.registerTextEditorCommand('dssProjects.abortRecipe', (textEditor: vscode.TextEditor) => dssExtension.abortRecipe(textEditor));
     vscode.commands.registerTextEditorCommand('dssProjects.runRecipe', (textEditor: vscode.TextEditor) => dssExtension.runRecipe(textEditor));
     vscode.commands.registerTextEditorCommand('dssProjects.selectPartitions', (textEditor: vscode.TextEditor) => dssExtension.selectPartitions(textEditor));
@@ -255,6 +256,23 @@ class DSSExtension {
         item.dssObject = await getWikiArticle(item.dssObject.article.projectKey, item.dssObject.article.id);
         const filePath = await this.fsManager.saveInFS(FileDetails.fromWikiArticle(item.dssObject));
         await this.openTextDocumentSafely(filePath, item);    
+    }
+    
+    async addWikiArticle(parentItem: WikiFolderTreeView | WikiArticleTreeView) {
+        const filename = await vscode.window.showInputBox();
+        if (filename) {
+            try {
+                if (parentItem instanceof WikiFolderTreeView) {
+                    await createWikiArticle(parentItem.parent.dssObject.projectKey, filename)
+                }
+                else {
+                    await createWikiArticle(parentItem.dssObject.article.projectKey, filename, parentItem.dssObject.article.id);
+                }
+                vscode.commands.executeCommand("dssProjects.refreshEntry");
+            } catch {
+                vscode.window.showErrorMessage(`Can not create wiki article with name ${filename}`);
+            }
+        }
     }
     
     async openTextDocumentSafely(filePath: string, item: TreeViewItem): Promise<void> {

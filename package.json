@@ -73,6 +73,14 @@
 				}
 			},
 			{
+				"command": "dssProjects.createWikiArticle",
+				"title": "New wiki article",
+				"icon": {
+					"light": "resources/images/light/new-file.svg",
+					"dark": "resources/images/dark/new-file.svg"
+				}
+			},
+			{
 				"command": "dssPlugins.refreshEntry",
 				"title": "Refresh",
 				"icon": {
@@ -140,6 +148,11 @@
 				}
 			],
 			"view/item/context": [
+				{
+					"command": "dssProjects.createWikiArticle",
+					"group": "inline",
+					"when": "viewItem == wikiArticle"
+				},
 				{
 					"command": "dssPlugins.newFolder",
 					"group": "inline",

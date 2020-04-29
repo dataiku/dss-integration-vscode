@@ -164,10 +164,15 @@ export class WikiFolderTreeView implements TreeViewItem {
 
     async getChildren(): Promise<TreeViewItem[]> {
         const wiki = await getWiki(this.parent.dssObject.projectKey);
-        const wikiArticlesWithTaxonomies = await getWikiArticlesWithTaxonomies(this.parent.dssObject.projectKey, wiki.taxonomy);
-        return wikiArticlesWithTaxonomies.map((wikiArticleWithTaxonomy) => {
-            return new WikiArticleTreeView(wikiArticleWithTaxonomy, this);
-        }).sort(sortTreeViewItems);
+        if (wiki.taxonomy) {
+            const wikiArticlesWithTaxonomies = await getWikiArticlesWithTaxonomies(this.parent.dssObject.projectKey, wiki.taxonomy);
+            return wikiArticlesWithTaxonomies.map((wikiArticleWithTaxonomy) => {
+                return new WikiArticleTreeView(wikiArticleWithTaxonomy, this);
+            }).sort(sortTreeViewItems);
+        }
+        else {
+            return [];
+        }
     }
 }
 
