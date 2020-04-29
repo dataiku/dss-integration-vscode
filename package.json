@@ -81,6 +81,10 @@
 				}
 			},
 			{
+				"command": "dssProjects.openWikiArticleInDSS",
+				"title": "Open in DSS"
+			},
+			{
 				"command": "dssProjects.deleteWikiArticle",
 				"title": "Delete wiki article",
 				"icon": {
@@ -159,6 +163,11 @@
 				{
 					"command": "dssProjects.createWikiArticle",
 					"group": "inline",
+					"when": "viewItem == wikiArticle || viewItem == wikiFolder"
+				},
+				{
+					"command": "dssProjects.openWikiArticleInDSS",
+					"group": "actionGroup",
 					"when": "viewItem == wikiArticle"
 				},
 				{

@@ -55,7 +55,7 @@ export class ProjectsTreeDataProvider implements vscode.TreeDataProvider<TreeVie
             };
             treeItem.contextValue = "wikiArticle";
         } else if (item instanceof WikiFolderTreeView) {
-            treeItem.contextValue = "wikiArticle";
+            treeItem.contextValue = "wikiFolder";
         }
         return treeItem;
 	}
