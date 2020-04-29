@@ -4,7 +4,7 @@ import { ProjectsTreeDataProvider } from './projectsTreeDataProvider';
 import { PluginsTreeDataProvider } from './pluginsTreeDataProvider';
 import { Recipe, RecipeAndPayload, getRecipeAndPayload } from './api/recipe';
 import { getWebApp, WebApp, getModifiedWebApp } from './api/webapp';
-import { getWikiArticle, WikiArticle, createWikiArticle } from './api/wiki';
+import { getWikiArticle, WikiArticle, createWikiArticle, deleteWikiArticle } from './api/wiki';
 import { getPluginFileContentAndType, savePluginFile, getPluginItemDetails, removePluginContents, addPluginFolder } from './api/plugin';
 import { waitJobToFinish, abortJob, startRecipe, promptPartitions, isPartitioned } from './api/job';
 import { FSManager, FileDetails } from './FSManager';
@@ -42,6 +42,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('dssProjects.openWebApp', (item: WebAppFileTreeView) => dssExtension.openWebAppFile(item));
     vscode.commands.registerCommand('dssProjects.openWikiArticle', (item: WikiArticleTreeView) => dssExtension.openWikiArticleFile(item));
     vscode.commands.registerCommand("dssProjects.createWikiArticle", (parentItem: WikiFolderTreeView | WikiArticleTreeView) => dssExtension.addWikiArticle(parentItem));
+    vscode.commands.registerCommand("dssProjects.deleteWikiArticle", (item: WikiArticleTreeView) => dssExtension.deleteWikiArticle(item));
     vscode.commands.registerTextEditorCommand('dssProjects.abortRecipe', (textEditor: vscode.TextEditor) => dssExtension.abortRecipe(textEditor));
     vscode.commands.registerTextEditorCommand('dssProjects.runRecipe', (textEditor: vscode.TextEditor) => dssExtension.runRecipe(textEditor));
     vscode.commands.registerTextEditorCommand('dssProjects.selectPartitions', (textEditor: vscode.TextEditor) => dssExtension.selectPartitions(textEditor));
@@ -273,6 +274,12 @@ class DSSExtension {
                 vscode.window.showErrorMessage(`Can not create wiki article with name ${filename}`);
             }
         }
+    }
+    
+    async deleteWikiArticle(item: WikiArticleTreeView) {
+        await deleteWikiArticle(item.dssObject);
+        vscode.commands.executeCommand("dssProjects.refreshEntry");
+        vscode.window.showInformationMessage("Wiki article \"" + item.dssObject.article.name + "\" deleted successfully");
     }
     
     async openTextDocumentSafely(filePath: string, item: TreeViewItem): Promise<void> {

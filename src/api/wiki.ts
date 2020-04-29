@@ -73,3 +73,8 @@ export function createWikiArticle(projectKey: string, name: string, parent?: str
         body.parent = parent;
     return RequestWrapper.post(endpoint, {body: body})
 }
+
+export function deleteWikiArticle(wikiArticle: WikiArticle): Promise<void> {
+    const endpoint = "/projects/" + wikiArticle.article.projectKey + "/wiki/" + wikiArticle.article.id;
+    return RequestWrapper.delete(endpoint);
+}

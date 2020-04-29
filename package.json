@@ -81,6 +81,14 @@
 				}
 			},
 			{
+				"command": "dssProjects.deleteWikiArticle",
+				"title": "Delete wiki article",
+				"icon": {
+					"light": "resources/images/light/garbage.svg",
+					"dark": "resources/images/dark/garbage.svg"
+				}
+			},
+			{
 				"command": "dssPlugins.refreshEntry",
 				"title": "Refresh",
 				"icon": {
@@ -151,6 +159,11 @@
 				{
 					"command": "dssProjects.createWikiArticle",
 					"group": "inline",
+					"when": "viewItem == wikiArticle"
+				},
+				{
+					"command": "dssProjects.deleteWikiArticle",
+					"group": "actionGroup",
 					"when": "viewItem == wikiArticle"
 				},
 				{
