@@ -2,6 +2,11 @@
 
 All notable changes to the "dataiku-dss" extension will be documented in this file.
 
+## [TODO: set next release details here]
+
+- Added support for wiki.
+- Added ability to open projects, recipes, webapps, wiki articles and plugin folders into DSS.
+
 ## 1.1.0 - April 12, 2019
 
 - Remember the last built partitions. Avoid having to type the partitions every type you run a recipe with partitioned output dataset.
