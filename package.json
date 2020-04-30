@@ -168,7 +168,7 @@
 				{
 					"command": "dssProjects.openInDSS",
 					"group": "actionGroup",
-					"when": "viewItem == wikiArticle || viewItem == recipe || viewItem == webappFolder || viewItem == rootPluginFolder || viewItem == createableItemAtRoot"
+					"when": "viewItem == projectFolder || viewItem == recipeFolder || viewItem == webappRootFolder || viewItem == wikiFolder || viewItem == wikiArticle || viewItem == recipe || viewItem == webappFolder || viewItem == rootPluginFolder || viewItem == createableItemAtRoot"
 				},
 				{
 					"command": "dssProjects.deleteWikiArticle",

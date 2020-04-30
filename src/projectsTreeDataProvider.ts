@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { Project, getProjectsWithVersion } from './api/project';
-import { TreeViewItem, sortTreeViewItems, RecipeFileTreeView, WebAppFolderTreeView, WebAppFileTreeView, ProjectsFolderTreeView, WikiFolderTreeView, WikiArticleTreeView } from './treeViewItem';
+import { TreeViewItem, sortTreeViewItems, RecipeFileTreeView, WebAppsFolderTreeView, WebAppFolderTreeView, WebAppFileTreeView, ProjectsFolderTreeView, WikiFolderTreeView, WikiArticleTreeView, RecipesFolderTreeView } from './treeViewItem';
 import { canEditWebApp } from './api/utils';
 
 
@@ -40,6 +40,10 @@ export class ProjectsTreeDataProvider implements vscode.TreeDataProvider<TreeVie
                 arguments: [item]
             };
             treeItem.contextValue = "recipe";
+        } else if (item instanceof RecipesFolderTreeView) {
+            treeItem.contextValue = "recipeFolder"
+        } else if (item instanceof WebAppsFolderTreeView) {
+            treeItem.contextValue = "webappRootFolder"
         } else if (item instanceof WebAppFileTreeView) {
             treeItem.command = {
                 command: "dssProjects.openWebApp",
@@ -49,7 +53,7 @@ export class ProjectsTreeDataProvider implements vscode.TreeDataProvider<TreeVie
         } else if (item instanceof WebAppFolderTreeView) {
             treeItem.contextValue = "webappFolder";
         } else if (item instanceof ProjectsFolderTreeView) {
-
+            treeItem.contextValue = "projectFolder"
         } else if (item instanceof WikiArticleTreeView) {
             treeItem.command = {
                 command: "dssProjects.openWikiArticle",
