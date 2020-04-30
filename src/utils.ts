@@ -28,9 +28,11 @@ export const dssLanguageIdToFileType: any = {
     "r": "r",
     "shell": "sh",
     "sql_query": "sql",
+    "sql_script": "sql",
     "sparkr": "r",
     "pyspark": "py",
     "spark_sql_query": "sql",
     "spark_scala": "scala",
-    "hive": "hive"
+    "hive": "hive",
+    "impala": 'impala'
 };
