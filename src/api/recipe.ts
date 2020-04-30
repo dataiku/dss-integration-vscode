@@ -15,6 +15,8 @@ export interface Recipe {
         }
     };
     versionTag: VersionTag;
+    successors: string[];
+    predecessors: string[];
 }
 
 export interface RecipeAndPayload {

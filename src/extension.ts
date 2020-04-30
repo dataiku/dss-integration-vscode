@@ -47,6 +47,8 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerTextEditorCommand('dssProjects.abortRecipe', (textEditor: vscode.TextEditor) => dssExtension.abortRecipe(textEditor));
     vscode.commands.registerTextEditorCommand('dssProjects.runRecipe', (textEditor: vscode.TextEditor) => dssExtension.runRecipe(textEditor));
     vscode.commands.registerTextEditorCommand('dssProjects.selectPartitions', (textEditor: vscode.TextEditor) => dssExtension.selectPartitions(textEditor));
+    vscode.commands.registerCommand('dssProjects.showRecipeInputs', (item: RecipeFileTreeView) => dssExtension.showRecipeInputs(item));
+    vscode.commands.registerCommand('dssProjects.showRecipeOutputs', (item: RecipeFileTreeView) => dssExtension.showRecipeOutputs(item));
 
     vscode.commands.registerCommand('dssPlugins.refreshEntry', () => dssExtension.refreshPlugins());
     vscode.commands.registerCommand('dssPlugins.openPluginFile', (item: PluginFileTreeView) => dssExtension.openPluginFile(item));
@@ -207,6 +209,35 @@ class DSSExtension {
         } else {
             throw new Error("No job is running for this recipe");
         }
+    }
+
+    async showRecipeInputs(item: RecipeFileTreeView) {
+        if(item.dssObject.predecessors.length) {
+            const selectedInput = await vscode.window.showQuickPick(item.dssObject.predecessors);
+            if (selectedInput) {
+                this.generateDatasetUrl(item.dssObject.projectKey, selectedInput);
+            }
+        }
+        else {
+            vscode.window.showInformationMessage("This recipe has no predecessors.")
+        }
+    }
+
+    async showRecipeOutputs(item: RecipeFileTreeView) {
+        if(item.dssObject.successors.length) {
+            const selectedOutput = await vscode.window.showQuickPick(item.dssObject.successors);
+            if (selectedOutput) {
+                this.generateDatasetUrl(item.dssObject.projectKey, selectedOutput);
+            }
+        }
+        else {
+            vscode.window.showInformationMessage("This recipe has no successors.")
+        }
+    }
+
+    private generateDatasetUrl(projectName: string, datasetName: string) {
+        const instanceUrl = DSSConfiguration.getUrl().replace(/\/?$/, '/'); // Adds trailing '/' if missing
+        vscode.env.openExternal(vscode.Uri.parse(`${instanceUrl}projects/${projectName}/datasets/${datasetName}/explore/`));
     }
     
     async openCodeRecipeFile(item: RecipeFileTreeView) {

@@ -123,6 +123,14 @@
 					"dark": "resources/images/dark/new-add-folder.svg",
 					"light": "resources/images/light/new-add-folder.svg"
 				}
+			},
+			{
+				"command": "dssProjects.showRecipeInputs",
+				"title": "Show recipe inputs"
+			},
+			{
+				"command": "dssProjects.showRecipeOutputs",
+				"title": "Show recipe outputs"
 			}
 		],
 		"viewsContainers": {
@@ -174,6 +182,16 @@
 					"command": "dssProjects.deleteWikiArticle",
 					"group": "actionGroup",
 					"when": "viewItem == wikiArticle"
+				},
+				{
+					"command": "dssProjects.showRecipeInputs",
+					"group": "actionGroup",
+					"when": "viewItem == recipe"
+				},
+				{
+					"command": "dssProjects.showRecipeOutputs",
+					"group": "actionGroup",
+					"when": "viewItem == recipe"
 				},
 				{
 					"command": "dssPlugins.newFolder",

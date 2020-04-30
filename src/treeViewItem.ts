@@ -1,5 +1,6 @@
 import { FileDetails } from "./FSManager";
 import { Project } from "./api/project";
+import { getProjectFlowGraph } from "./api/flow";
 import { Recipe, getCodeRecipes } from "./api/recipe";
 import { WebAppDetails, getWebApps, getWebApp, WebApp } from "./api/webapp";
 import { getWiki, getWikiArticlesWithTaxonomies, WikiArticleWithTaxonomy, WikiTaxonomy, WikiArticle } from "./api/wiki";
@@ -56,7 +57,16 @@ export class RecipesFolderTreeView implements TreeViewItem {
 
     async getChildren(): Promise<TreeViewItem[]> {
         const recipes = await getCodeRecipes(this.parent.dssObject.projectKey);
+        const flowGraph = await getProjectFlowGraph(this.parent.dssObject.projectKey);
         return recipes.map((recipe: Recipe) => {
+            recipe.predecessors = [];
+            recipe.successors = [];
+            for (const key in flowGraph.nodes[recipe.name].predecessors) {
+                recipe.predecessors.push(flowGraph.nodes[recipe.name].predecessors[key]);
+            }
+            for (const key in flowGraph.nodes[recipe.name].successors) {
+                recipe.successors.push(flowGraph.nodes[recipe.name].successors[key]);
+            }
             return new RecipeFileTreeView(recipe, this);
         }).sort(sortTreeViewItems);
     }
