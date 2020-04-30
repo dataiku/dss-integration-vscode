@@ -37,14 +37,14 @@ export interface WikiArticleWithTaxonomy {
     taxonomy: WikiTaxonomy;
 }
 
-export function getWiki(projectKey: string): Promise<Wiki> {
+export async function getWiki(projectKey: string): Promise<Wiki> {
     const endpoint = "/projects/" + projectKey + "/wiki/";
-    return RequestWrapper.get(endpoint);
+    return await RequestWrapper.get(endpoint);
 }
 
-export function getWikiArticle(projectKey: string, id: string): Promise<WikiArticle> {
+export async function getWikiArticle(projectKey: string, id: string): Promise<WikiArticle> {
     const endpoint = "/projects/" + projectKey + "/wiki/" + id;
-    return RequestWrapper.get(endpoint);
+    return await RequestWrapper.get(endpoint);
 }
 
 export async function getWikiArticlesWithTaxonomies(projectKey: string, wikiTaxonomies: WikiTaxonomy[]): Promise<WikiArticleWithTaxonomy[]> {
