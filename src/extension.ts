@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { TreeViewItem, RecipeFileTreeView, WebAppFolderTreeView, WebAppFileTreeView, WikiFolderTreeView, WikiArticleTreeView, RootPluginFolderTreeView, PluginFileTreeView, PluginFolderTreeView, ProjectsFolderTreeView, RecipesFolderTreeView, WebAppsFolderTreeView } from './treeViewItem';
+import { TreeViewItem, RecipeFileTreeView, WebAppFileTreeView, WikiFolderTreeView, WikiArticleTreeView, RootPluginFolderTreeView, PluginFileTreeView, PluginFolderTreeView, OpenableInDSS } from './treeViewItem';
 import { ProjectsTreeDataProvider } from './projectsTreeDataProvider';
 import { PluginsTreeDataProvider } from './pluginsTreeDataProvider';
 import { Recipe, RecipeAndPayload, getRecipeAndPayload } from './api/recipe';
@@ -42,7 +42,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('dssProjects.openWebApp', (item: WebAppFileTreeView) => dssExtension.openWebAppFile(item));
     vscode.commands.registerCommand('dssProjects.openWikiArticle', (item: WikiArticleTreeView) => dssExtension.openWikiArticleFile(item));
     vscode.commands.registerCommand("dssProjects.createWikiArticle", (parentItem: WikiFolderTreeView | WikiArticleTreeView) => dssExtension.addWikiArticle(parentItem));
-    vscode.commands.registerCommand('dssProjects.openInDSS', (item: ProjectsFolderTreeView | RecipesFolderTreeView | WebAppsFolderTreeView | WikiFolderTreeView | WikiArticleTreeView | RecipeFileTreeView | WebAppFolderTreeView | RootPluginFolderTreeView) => dssExtension.openInDSS(item));
+    vscode.commands.registerCommand('dssProjects.openInDSS', (item: OpenableInDSS) => dssExtension.openInDSS(item));
     vscode.commands.registerCommand("dssProjects.deleteWikiArticle", (item: WikiArticleTreeView) => dssExtension.deleteWikiArticle(item));
     vscode.commands.registerTextEditorCommand('dssProjects.abortRecipe', (textEditor: vscode.TextEditor) => dssExtension.abortRecipe(textEditor));
     vscode.commands.registerTextEditorCommand('dssProjects.runRecipe', (textEditor: vscode.TextEditor) => dssExtension.runRecipe(textEditor));
@@ -283,25 +283,9 @@ class DSSExtension {
         vscode.window.showInformationMessage("Wiki article \"" + item.dssObject.article.name + "\" deleted successfully");
     }
     
-    openInDSS(item: ProjectsFolderTreeView | RecipesFolderTreeView | WebAppsFolderTreeView | WikiFolderTreeView | WikiArticleTreeView | RecipeFileTreeView | WebAppFolderTreeView | RootPluginFolderTreeView) {
+    openInDSS(item: OpenableInDSS) {
         const instanceUrl = DSSConfiguration.getUrl().replace(/\/?$/, '/'); // Adds trailing '/' if missing
-        if (item instanceof ProjectsFolderTreeView){
-            vscode.env.openExternal(vscode.Uri.parse(`${instanceUrl}projects/${item.dssObject.projectKey}/`));
-        } else if (item instanceof RecipesFolderTreeView) {
-            vscode.env.openExternal(vscode.Uri.parse(`${instanceUrl}projects/${item.parent.dssObject.projectKey}/recipes/`));
-        } else if (item instanceof WebAppsFolderTreeView) {
-            vscode.env.openExternal(vscode.Uri.parse(`${instanceUrl}projects/${item.parent.dssObject.projectKey}/webapps/`));
-        } else if (item instanceof WikiFolderTreeView) {
-            vscode.env.openExternal(vscode.Uri.parse(`${instanceUrl}projects/${item.parent.dssObject.projectKey}/wiki/`));
-        } else if (item instanceof WikiArticleTreeView) {
-            vscode.env.openExternal(vscode.Uri.parse(`${instanceUrl}projects/${item.dssObject.article.projectKey}/wiki/${item.dssObject.article.id}/`));
-        } else if (item instanceof RecipeFileTreeView) {
-            vscode.env.openExternal(vscode.Uri.parse(`${instanceUrl}projects/${item.dssObject.projectKey}/recipes/${item.dssObject.name}/`));
-        } else if (item instanceof WebAppFolderTreeView) {
-            vscode.env.openExternal(vscode.Uri.parse(`${instanceUrl}projects/${item.dssObject.projectKey}/webapps/${item.dssObject.id}_${item.dssObject.name}/view`));
-        } else if (item instanceof RootPluginFolderTreeView) {
-            vscode.env.openExternal(vscode.Uri.parse(`${instanceUrl}plugins/development/${item.dssObject.id}/editor/`));
-        }  
+        vscode.env.openExternal(vscode.Uri.parse(`${instanceUrl}${item.urlInDSS()}`));
     }
     
     async openTextDocumentSafely(filePath: string, item: TreeViewItem): Promise<void> {
