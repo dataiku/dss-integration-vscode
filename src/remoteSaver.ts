@@ -5,6 +5,7 @@ import { roundedFormat } from "./utils";
 import { WebApp, saveWebApp, getWebApp } from "./api/webapp";
 import { PluginItem, savePluginFile, getPluginFileContentAndType, getPluginItemDetails } from "./api/plugin";
 import { WikiArticle, getWikiArticle, saveWikiArticle } from "./api/wiki";
+import { VersionTag } from "./api/versionTag";
 
 abstract class RemoteSaver<T> {
     protected abstract saveInDss(itemToSave: T): Promise<void>;
@@ -43,6 +44,15 @@ abstract class RemoteSaver<T> {
             this.printSaveSuccessMsg();
         }
     }
+
+    protected generateConflictMessage(versionTag: VersionTag, objectType: string): string {
+        const lastModifier = versionTag.lastModifiedBy.login;
+        const lastModification = roundedFormat((Date.now() - versionTag.lastModifiedOn));
+
+        let message = "This " + objectType + " is being edited by more than one user.\n";
+        message += "It has been modified about "+ lastModification + " ago by "+ lastModifier +".\n";
+        return message;
+    }
 }
 
 enum SaveAction {
@@ -64,12 +74,7 @@ export class RecipeRemoteSaver extends RemoteSaver<RecipeAndPayload> {
     }
 
     protected getConflictMessage(conflictingElement: RecipeAndPayload): string {
-        const lastModifier = conflictingElement.recipe.versionTag.lastModifiedBy.login;
-        const lastModification = roundedFormat((Date.now() - conflictingElement.recipe.versionTag.lastModifiedOn));
-        
-        let message = "This recipe is being edited by more than one user.\n";
-        message += "It has been modified about "+ lastModification + " ago by "+ lastModifier +".\n";
-        return message;
+        return this.generateConflictMessage(conflictingElement.recipe.versionTag, "recipe");
     }
 
     protected async getRemoteObject(localRecipeAndPayload: RecipeAndPayload): Promise<RecipeAndPayload> {
@@ -95,12 +100,7 @@ export class WebAppRemoteSaver extends RemoteSaver<WebApp> {
     }
 
     protected getConflictMessage(conflictingElement: WebApp): string {
-        const lastModifier = conflictingElement.versionTag.lastModifiedBy.login;
-        const lastModification = roundedFormat((Date.now() - conflictingElement.versionTag.lastModifiedOn));
-        
-        let message = "This webapp is being edited by more than one user.\n";
-        message += "It has been modified about "+ lastModification + " ago by "+ lastModifier +".\n";
-        return message;
+        return this.generateConflictMessage(conflictingElement.versionTag, "webapp");
     }
 
     protected async getRemoteObject(localWebapp: WebApp): Promise<WebApp> {
@@ -126,12 +126,7 @@ export class WikiArticleRemoteSaver extends RemoteSaver<WikiArticle> {
     }
 
     protected getConflictMessage(conflictingElement: WikiArticle): string {
-        const lastModifier = conflictingElement.article.versionTag.lastModifiedBy.login;
-        const lastModification = roundedFormat((Date.now() - conflictingElement.article.versionTag.lastModifiedOn));
-
-        let message = "This wiki article is being edited by more than one user.\n";
-        message += "It has been modified about "+ lastModification + " ago by "+ lastModifier +".\n";
-        return message;
+        return this.generateConflictMessage(conflictingElement.article.versionTag, "wiki article");
     }
 
     protected async getRemoteObject(localWikiArticle: WikiArticle): Promise<WikiArticle> {
