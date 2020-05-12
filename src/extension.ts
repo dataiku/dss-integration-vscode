@@ -256,6 +256,9 @@ class DSSExtension {
     
     async openWikiArticleFile(item: WikiArticleTreeView) {
         item.dssObject = await getWikiArticle(item.dssObject.article.projectKey, item.dssObject.article.id);
+        if (item.dssObject.payload == undefined) {
+            item.dssObject.payload = ""; // Empty articles have an undefined payload.
+        }
         const filePath = await this.fsManager.saveInFS(FileDetails.fromWikiArticle(item.dssObject));
         await this.openTextDocumentSafely(filePath, item);    
     }
