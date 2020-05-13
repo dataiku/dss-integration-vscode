@@ -4,7 +4,9 @@ All notable changes to the "dataiku-dss" extension will be documented in this fi
 
 ## [TODO: set next release details here]
 
-- Added support for Hive, Impala SQL scripts
+- Added support for wiki.
+- Added ability to open projects, recipes, webapps, wiki articles and plugin folders into DSS.
+- Added support for Hive, Impala and SQL scripts.
 
 ## 1.1.0 - April 12, 2019
 

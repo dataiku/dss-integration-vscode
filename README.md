@@ -15,6 +15,10 @@ You can browse all code recipe of a project, edit them and when you save them, t
 
 When a code recipe is open you will find in the bottom bar a button to run this recipe remotely on DSS. A new *Output* window will open and print the log of the running recipe.
 
+### Wiki
+
+You can browse all the wiki articles of a project, create, remove, edit and save them back into DSS.
+
 #### Plugins
 
 You can browse into your plugins' hierarchy, edit the files and when you save them, they will be saved back into DSS.

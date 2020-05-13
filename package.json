@@ -73,6 +73,26 @@
 				}
 			},
 			{
+				"command": "dssProjects.createWikiArticle",
+				"title": "New wiki article",
+				"icon": {
+					"light": "resources/images/light/new-file.svg",
+					"dark": "resources/images/dark/new-file.svg"
+				}
+			},
+			{
+				"command": "dssProjects.openInDSS",
+				"title": "Open in DSS"
+			},
+			{
+				"command": "dssProjects.deleteWikiArticle",
+				"title": "Delete wiki article",
+				"icon": {
+					"light": "resources/images/light/garbage.svg",
+					"dark": "resources/images/dark/garbage.svg"
+				}
+			},
+			{
 				"command": "dssPlugins.refreshEntry",
 				"title": "Refresh",
 				"icon": {
@@ -141,6 +161,21 @@
 			],
 			"view/item/context": [
 				{
+					"command": "dssProjects.createWikiArticle",
+					"group": "inline",
+					"when": "viewItem == wikiArticle || viewItem == wikiFolder"
+				},
+				{
+					"command": "dssProjects.openInDSS",
+					"group": "actionGroup",
+					"when": "viewItem == projectFolder || viewItem == recipeFolder || viewItem == webappRootFolder || viewItem == wikiFolder || viewItem == wikiArticle || viewItem == recipe || viewItem == webappFolder || viewItem == rootPluginFolder || viewItem == createableItemAtRoot"
+				},
+				{
+					"command": "dssProjects.deleteWikiArticle",
+					"group": "actionGroup",
+					"when": "viewItem == wikiArticle"
+				},
+				{
 					"command": "dssPlugins.newFolder",
 					"group": "inline",
 					"when": "viewItem == actionableFolder"
@@ -148,7 +183,7 @@
 				{
 					"command": "dssPlugins.newFile",
 					"group": "inline",
-					"when": "viewItem == folder"
+					"when": "viewItem == folder || viewItem == rootPluginFolder"
 				},
 				{
 					"command": "dssPlugins.newFile",
