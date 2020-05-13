@@ -1,14 +1,15 @@
 import * as vscode from 'vscode';
-import { TreeViewItem, RecipeFileTreeView, WebAppFileTreeView, RootPluginFolderTreeView, PluginFileTreeView, PluginFolderTreeView } from './treeViewItem';
+import { TreeViewItem, RecipeFileTreeView, WebAppFileTreeView, WikiFolderTreeView, WikiArticleTreeView, RootPluginFolderTreeView, PluginFileTreeView, PluginFolderTreeView, OpenableInDSS } from './treeViewItem';
 import { ProjectsTreeDataProvider } from './projectsTreeDataProvider';
 import { PluginsTreeDataProvider } from './pluginsTreeDataProvider';
 import { Recipe, RecipeAndPayload, getRecipeAndPayload } from './api/recipe';
 import { getWebApp, WebApp, getModifiedWebApp } from './api/webapp';
+import { getWikiArticle, WikiArticle, createWikiArticle, deleteWikiArticle } from './api/wiki';
 import { getPluginFileContentAndType, savePluginFile, getPluginItemDetails, removePluginContents, addPluginFolder } from './api/plugin';
 import { waitJobToFinish, abortJob, startRecipe, promptPartitions, isPartitioned } from './api/job';
 import { FSManager, FileDetails } from './FSManager';
 import { RecipesStatusBarMap } from './statusBarItemsMap';
-import { RecipeRemoteSaver, WebAppRemoteSaver, PluginRemoteSaver } from './remoteSaver';
+import { RecipeRemoteSaver, WebAppRemoteSaver, WikiArticleRemoteSaver, PluginRemoteSaver } from './remoteSaver';
 import { DSSConfiguration } from './dssConfiguration';
 import { getOuputToBuild } from './api/recipeOutput';
 
@@ -39,6 +40,10 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('dssProjects.refreshEntry', () => dssExtension.refreshProjects());
     vscode.commands.registerCommand('dssProjects.openCodeRecipe', (item: RecipeFileTreeView) => dssExtension.openCodeRecipeFile(item));
     vscode.commands.registerCommand('dssProjects.openWebApp', (item: WebAppFileTreeView) => dssExtension.openWebAppFile(item));
+    vscode.commands.registerCommand('dssProjects.openWikiArticle', (item: WikiArticleTreeView) => dssExtension.openWikiArticleFile(item));
+    vscode.commands.registerCommand("dssProjects.createWikiArticle", (parentItem: WikiFolderTreeView | WikiArticleTreeView) => dssExtension.addWikiArticle(parentItem));
+    vscode.commands.registerCommand('dssProjects.openInDSS', (item: OpenableInDSS) => dssExtension.openInDSS(item));
+    vscode.commands.registerCommand("dssProjects.deleteWikiArticle", (item: WikiArticleTreeView) => dssExtension.deleteWikiArticle(item));
     vscode.commands.registerTextEditorCommand('dssProjects.abortRecipe', (textEditor: vscode.TextEditor) => dssExtension.abortRecipe(textEditor));
     vscode.commands.registerTextEditorCommand('dssProjects.runRecipe', (textEditor: vscode.TextEditor) => dssExtension.runRecipe(textEditor));
     vscode.commands.registerTextEditorCommand('dssProjects.selectPartitions', (textEditor: vscode.TextEditor) => dssExtension.selectPartitions(textEditor));
@@ -99,6 +104,8 @@ class DSSExtension {
                 this.openCodeRecipeFile(treeViewItem);
             } else if (treeViewItem instanceof WebAppFileTreeView) {
                 this.openWebAppFile(treeViewItem);
+            } else if (treeViewItem instanceof WikiArticleTreeView) {
+                this.openWikiArticleFile(treeViewItem);
             }
         }   
     }
@@ -247,6 +254,43 @@ class DSSExtension {
         });
     }
     
+    async openWikiArticleFile(item: WikiArticleTreeView) {
+        item.dssObject = await getWikiArticle(item.dssObject.article.projectKey, item.dssObject.article.id);
+        if (item.dssObject.payload == undefined) {
+            item.dssObject.payload = ""; // Empty articles have an undefined payload.
+        }
+        const filePath = await this.fsManager.saveInFS(FileDetails.fromWikiArticle(item.dssObject));
+        await this.openTextDocumentSafely(filePath, item);    
+    }
+    
+    async addWikiArticle(parentItem: WikiFolderTreeView | WikiArticleTreeView) {
+        const filename = await vscode.window.showInputBox();
+        if (filename) {
+            try {
+                if (parentItem instanceof WikiFolderTreeView) {
+                    await createWikiArticle(parentItem.parent.dssObject.projectKey, filename)
+                }
+                else {
+                    await createWikiArticle(parentItem.dssObject.article.projectKey, filename, parentItem.dssObject.article.id);
+                }
+                vscode.commands.executeCommand("dssProjects.refreshEntry");
+            } catch {
+                vscode.window.showErrorMessage(`Can not create wiki article with name ${filename}`);
+            }
+        }
+    }
+    
+    async deleteWikiArticle(item: WikiArticleTreeView) {
+        await deleteWikiArticle(item.dssObject);
+        vscode.commands.executeCommand("dssProjects.refreshEntry");
+        vscode.window.showInformationMessage("Wiki article \"" + item.dssObject.article.name + "\" deleted successfully");
+    }
+    
+    openInDSS(item: OpenableInDSS) {
+        const instanceUrl = DSSConfiguration.getUrl().replace(/\/?$/, '/'); // Adds trailing '/' if missing
+        vscode.env.openExternal(vscode.Uri.parse(`${instanceUrl}${item.urlInDSS()}`));
+    }
+    
     async openTextDocumentSafely(filePath: string, item: TreeViewItem): Promise<void> {
         const textEditor = await this.openTextDocument(filePath);
         this.addTabBinding(textEditor, item);
@@ -274,6 +318,14 @@ class DSSExtension {
                 const saved = await getPluginItemDetails(item.id, item.filePath);
                 item.dssObject.lastModified = saved.lastModified;
             }
+        } else if (item instanceof WikiArticleTreeView) {
+            let wikiArticle: WikiArticle = {
+                article: item.dssObject.article,
+                payload: doc.getText() 
+            };
+            await new WikiArticleRemoteSaver(this.fsManager).save(wikiArticle);
+            const saved = await getWikiArticle(item.dssObject.article.projectKey, item.dssObject.article.id);
+            item.dssObject.article.versionTag = saved.article.versionTag;
         }
     }
     

@@ -1,5 +1,6 @@
 import { WebApp, WebAppType, BokehWebAppParams, ShinyWebAppParams, StandardWebAppParams, WebAppFile } from "./api/webapp";
 import { RecipeAndPayload } from "./api/recipe";
+import { WikiArticle } from "./api/wiki";
 import { writeFile, existsSync, mkdirSync, rmdirSync, readdirSync, lstatSync, unlinkSync } from "fs";
 import * as path from "path";
 import { dssLanguageIdToFileType } from "./utils";
@@ -64,6 +65,13 @@ export class FileDetails {
         const content = recipeAndPayload.payload;
         const fileName = recipeAndPayload.recipe.name + "." + extension;
         const dir = recipeAndPayload.recipe.projectKey + "/" + "RECIPES";
+        return new FileDetails(fileName, content, dir);
+    }
+
+    static fromWikiArticle(wikiArticle: WikiArticle): FileDetails {
+        const fileName = wikiArticle.article.name.replace(/[^a-z0-9]/gi, '_') + '.md';
+        const content = wikiArticle.payload;
+        const dir = wikiArticle.article.projectKey + "/" + "WIKI";
         return new FileDetails(fileName, content, dir);
     }
 }

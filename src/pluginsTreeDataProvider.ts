@@ -64,7 +64,7 @@ export class PluginsTreeDataProvider implements vscode.TreeDataProvider<TreeView
             if (this.isFullFeatured) {
                 treeItem.contextValue = "createableItemAtRoot";
             } else {
-                treeItem.contextValue = "folder";
+                treeItem.contextValue = "rootPluginFolder";
             }
         }
         
