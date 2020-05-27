@@ -2,8 +2,8 @@
 	"name": "dataiku-dss",
 	"publisher": "Dataiku",
 	"displayName": "Dataiku DSS",
-	"description": "Edit Dataiku DSS recipes, plugins and web apps directly into Visual Studio Code.",
-	"version": "1.1.0",
+	"description": "Edit Dataiku DSS recipes, plugins, wiki articles and web apps directly into Visual Studio Code.",
+	"version": "1.2.0",
 	"enableProposedApi": false,
 	"repository": {
 		"type": "git",
