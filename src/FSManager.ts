@@ -30,6 +30,19 @@ export class FileDetails {
         return new FileDetails(fileName, content, directory);
     }
 
+    static fromLibrary(pluginId: string, filePath: string, content?: string): FileDetails {
+        const libraryPath = filePath.substr(0, filePath.lastIndexOf('/'));
+        const fileName = filePath.substr(filePath.lastIndexOf('/') + 1);
+        let directory = "LIBRARIES/" + pluginId;
+        if (libraryPath !== "") {
+            directory += "/" + libraryPath;
+        }
+        if (content === undefined) {
+            content = "";
+        }
+        return new FileDetails(fileName, content, directory);
+    }
+
     static fromWebApp(webApp: WebApp): FileDetails[] {
         const files: FileDetails[]  = [];
         const dir = webApp.projectKey + "/WEBAPPS/" + webApp.name;

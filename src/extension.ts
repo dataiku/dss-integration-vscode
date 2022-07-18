@@ -1,17 +1,39 @@
 import * as vscode from 'vscode';
-import { TreeViewItem, RecipeFileTreeView, WebAppFileTreeView, WikiFolderTreeView, WikiArticleTreeView, RootPluginFolderTreeView, PluginFileTreeView, PluginFolderTreeView, OpenableInDSS } from './treeViewItem';
+import {
+    TreeViewItem,
+    RecipeFileTreeView,
+    WebAppFileTreeView,
+    WikiFolderTreeView,
+    WikiArticleTreeView,
+    RootPluginFolderTreeView,
+    PluginFileTreeView,
+    PluginFolderTreeView,
+    OpenableInDSS,
+    LibraryFileTreeView,
+    LibraryFolderTreeView,
+    RootLibraryFolderTreeView
+} from './treeViewItem';
 import { ProjectsTreeDataProvider } from './projectsTreeDataProvider';
 import { PluginsTreeDataProvider } from './pluginsTreeDataProvider';
 import { Recipe, RecipeAndPayload, getRecipeAndPayload } from './api/recipe';
 import { getWebApp, WebApp, getModifiedWebApp } from './api/webapp';
 import { getWikiArticle, WikiArticle, createWikiArticle, deleteWikiArticle } from './api/wiki';
-import { getPluginFileContentAndType, savePluginFile, getPluginItemDetails, removePluginContents, addPluginFolder } from './api/plugin';
+import {
+    getPluginFileContentAndType,
+    savePluginFile,
+    getPluginItemDetails,
+    removePluginContents,
+    addPluginFolder,
+    renamePluginContent,
+    movePluginContent
+} from './api/plugin';
 import { waitJobToFinish, abortJob, startRecipe, promptPartitions, isPartitioned } from './api/job';
 import { FSManager, FileDetails } from './FSManager';
 import { RecipesStatusBarMap } from './statusBarItemsMap';
-import { RecipeRemoteSaver, WebAppRemoteSaver, WikiArticleRemoteSaver, PluginRemoteSaver } from './remoteSaver';
+import {RecipeRemoteSaver, WebAppRemoteSaver, WikiArticleRemoteSaver, PluginRemoteSaver, LibraryRemoteSaver} from './remoteSaver';
 import { DSSConfiguration } from './dssConfiguration';
 import { getOuputToBuild } from './api/recipeOutput';
+import {addLibraryFolder, getLibraryFileContent, moveLibraryContent, removeLibraryContents, renameLibraryContent, saveLibraryFile} from "./api/libraries";
 
 interface TabBinding {
     uri: vscode.Uri;
@@ -47,18 +69,27 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerTextEditorCommand('dssProjects.abortRecipe', (textEditor: vscode.TextEditor) => dssExtension.abortRecipe(textEditor));
     vscode.commands.registerTextEditorCommand('dssProjects.runRecipe', (textEditor: vscode.TextEditor) => dssExtension.runRecipe(textEditor));
     vscode.commands.registerTextEditorCommand('dssProjects.selectPartitions', (textEditor: vscode.TextEditor) => dssExtension.selectPartitions(textEditor));
+    vscode.commands.registerCommand('dssProjects.openLibraryFile', (item: LibraryFileTreeView) => dssExtension.openLibraryFile(item));
+    vscode.commands.registerCommand("dssProjects.newLibraryFile", (parentItem: LibraryFolderTreeView | RootLibraryFolderTreeView) => dssExtension.addLibraryFile(parentItem));
+    vscode.commands.registerCommand("dssProjects.deleteLibraryItem", (item: LibraryFileTreeView | LibraryFolderTreeView) => dssExtension.deleteLibraryItem(item));
+    vscode.commands.registerCommand("dssProjects.newLibraryFolder", (parentItem: LibraryFolderTreeView | RootLibraryFolderTreeView) => dssExtension.addLibraryFolder(parentItem));
+    vscode.commands.registerCommand('dssProjects.renameLibraryItem', (item: LibraryFolderTreeView | LibraryFileTreeView) => dssExtension.renameLibraryItem(item));
+    vscode.commands.registerCommand("dssProjects.moveLibraryItem", (item: LibraryFolderTreeView | LibraryFileTreeView) => dssExtension.moveLibraryItem(item));
 
     vscode.commands.registerCommand('dssPlugins.refreshEntry', () => dssExtension.refreshPlugins());
     vscode.commands.registerCommand('dssPlugins.openPluginFile', (item: PluginFileTreeView) => dssExtension.openPluginFile(item));
     vscode.commands.registerCommand("dssPlugins.newFile", (parentItem: PluginFolderTreeView | RootPluginFolderTreeView) => dssExtension.addPluginFile(parentItem));
     vscode.commands.registerCommand("dssPlugins.deleteItem", (item: PluginFileTreeView | PluginFolderTreeView) => dssExtension.deletePluginItem(item));
     vscode.commands.registerCommand("dssPlugins.newFolder", (parentItem: PluginFolderTreeView | RootPluginFolderTreeView) => dssExtension.addPluginFolder(parentItem));
+    vscode.commands.registerCommand('dssPlugins.renameItem', (item: PluginFolderTreeView | PluginFileTreeView) => dssExtension.renamePluginItem(item));
+    vscode.commands.registerCommand("dssPlugins.moveItem", (item: PluginFolderTreeView | PluginFileTreeView) => dssExtension.movePluginItem(item));
 
     /***    CONFIGURATION COMMANDS   ***/
     vscode.commands.registerCommand("setup.apiKey", () => DSSConfiguration.setApiKeyFromUserInput());
     vscode.commands.registerCommand("setup.url", () => DSSConfiguration.setUrlFromUserInut());
     vscode.commands.registerCommand("setup.deactivateCertificateCheck", () => DSSConfiguration.setCheckCertificate(false));
     vscode.commands.registerCommand("setup.activateCertificateCheck", () => DSSConfiguration.setCheckCertificate(true));
+
     /***    TEXT DOCUMENT EVENTS   ***/
     vscode.window.onDidChangeActiveTextEditor((textEditor: vscode.TextEditor | undefined) => dssExtension.selectTreeViewItem(textEditor));
     vscode.workspace.onWillSaveTextDocument((event) => event.waitUntil(dssExtension.saveInDss(event)));
@@ -106,6 +137,8 @@ class DSSExtension {
                 this.openWebAppFile(treeViewItem);
             } else if (treeViewItem instanceof WikiArticleTreeView) {
                 this.openWikiArticleFile(treeViewItem);
+            } else if (treeViewItem instanceof LibraryFileTreeView) {
+                this.openLibraryFile(treeViewItem);
             }
         }   
     }
@@ -144,6 +177,100 @@ class DSSExtension {
                 await this.addPluginItem(parentItem, filename, false);
             } catch {
                 vscode.window.showErrorMessage(`Can not create file with name ${filename}`);
+            }
+        }
+    }
+
+    async renamePluginItem(item: PluginFolderTreeView | PluginFileTreeView) {
+        const newName = await vscode.window.showInputBox({
+            placeHolder: "New name",
+            prompt: "Enter the new name for this content",
+            validateInput: this.validateInput
+        });
+        if (newName) {
+            try {
+                await renamePluginContent(item.id, item.filePath,  newName);
+                vscode.commands.executeCommand("dssPlugins.refreshEntry");
+            } catch {
+                vscode.window.showErrorMessage(`Can not rename content to ${newName}`);
+            }
+        }
+    }
+
+    async movePluginItem(item: PluginFolderTreeView | PluginFileTreeView) {
+        const newPath = await vscode.window.showInputBox({
+            placeHolder: "To directory",
+            prompt: "Enter the path to the destination",
+            value: "/",
+            validateInput: this.validateInput
+        });
+        if (newPath) {
+            try {
+                await movePluginContent(item.id, item.filePath,  newPath);
+                vscode.commands.executeCommand("dssPlugins.refreshEntry");
+            } catch {
+                vscode.window.showErrorMessage(`Can not move content to path ${newPath}`);
+            }
+        }
+    }
+
+    async addLibraryFolder(parentItem: LibraryFolderTreeView | RootLibraryFolderTreeView) {
+        const folderName = await vscode.window.showInputBox();
+        if (folderName) {
+            try {
+                await this.addLibraryItem(parentItem, folderName, true);
+            } catch (error) {
+                vscode.window.showErrorMessage(`Can not create folder with name ${folderName}`);
+            }
+        }
+    }
+
+    async deleteLibraryItem(item: LibraryFileTreeView | LibraryFolderTreeView) {
+        await removeLibraryContents(item.id, item.filePath);
+        vscode.commands.executeCommand("dssProjects.refreshEntry");
+        vscode.window.showInformationMessage("File/folder deleted successfully");
+    }
+
+    async addLibraryFile(parentItem: LibraryFolderTreeView | RootLibraryFolderTreeView) {
+        const filename = await vscode.window.showInputBox();
+        if (filename) {
+            try {
+                await this.addLibraryItem(parentItem, filename, false);
+            } catch {
+                vscode.window.showErrorMessage(`Can not create file with name ${filename}`);
+            }
+        }
+    }
+
+    async renameLibraryItem(item: LibraryFolderTreeView | LibraryFileTreeView) {
+        const newName = await vscode.window.showInputBox({
+            placeHolder: "New name",
+            prompt: "Enter the new name for this content",
+            validateInput: this.validateInput
+        });
+        if (newName) {
+            try {
+                await renameLibraryContent(item.id, item.filePath,  newName);
+                vscode.commands.executeCommand("dssProjects.refreshEntry");
+            } catch {
+                vscode.window.showErrorMessage(`Can not rename content to ${newName}`);
+            }
+        }
+    }
+
+    async moveLibraryItem(item: LibraryFolderTreeView | LibraryFileTreeView) {
+        const newPath = await vscode.window.showInputBox({
+            placeHolder: "To directory",
+            prompt: "Enter the path to the destination",
+            value: "/",
+            validateInput: this.validateInput
+        });
+        if (newPath) {
+            try {
+                await moveLibraryContent(item.id, item.filePath,  newPath);
+                vscode.commands.executeCommand("dssProjects.refreshEntry");
+            } catch {
+                vscode.window.showErrorMessage(`Can not move content to path ${newPath}`);
             }
         }
     }
@@ -239,6 +366,14 @@ class DSSExtension {
             this.openTextDocumentSafely(fsPath, item);
         }
     }
+
+    async openLibraryFile(item: LibraryFileTreeView) {
+        const projectKey = item.id;
+        const projectLibraryItem = await getLibraryFileContent(projectKey, item.filePath);
+        item.dssObject.lastModified = projectLibraryItem.lastModified;
+        const fsPath = await this.fsManager.saveInFS(FileDetails.fromLibrary(projectKey, item.filePath, projectLibraryItem.data));
+        await this.openTextDocumentSafely(fsPath, item);
+    }
     
     openWebAppFile(item: WebAppFileTreeView) {
         getWebApp(item.parent.dssObject).then((webApp: WebApp) => {
@@ -326,6 +461,10 @@ class DSSExtension {
             await new WikiArticleRemoteSaver(this.fsManager).save(wikiArticle);
             const saved = await getWikiArticle(item.dssObject.article.projectKey, item.dssObject.article.id);
             item.dssObject.article.versionTag = saved.article.versionTag;
+        } else if (item instanceof LibraryFileTreeView) {
+            await new LibraryRemoteSaver(this.fsManager, item.id, doc).save(item.dssObject);
+            const saved = await getLibraryFileContent(item.id, item.filePath);
+            item.dssObject.lastModified = saved.lastModified;
         }
     }
     
@@ -376,6 +515,21 @@ class DSSExtension {
         vscode.commands.executeCommand("dssPlugins.refreshEntry");
     }
 
+    private async addLibraryItem(parentItem: LibraryFolderTreeView | RootLibraryFolderTreeView, name: string, folder: boolean) {
+        let path;
+        if (parentItem instanceof LibraryFolderTreeView) {
+            path = parentItem.filePath + "/" + name;
+        } else {
+            path = name;
+        }
+        if (folder) {
+            await addLibraryFolder(parentItem.id, path);
+        } else {
+            await saveLibraryFile(parentItem.id, path, "");
+        }
+        vscode.commands.executeCommand("dssProjects.refreshEntry");
+    }
+
     private addTabBinding(textEditor: vscode.TextEditor, item: TreeViewItem) {
         this.tabsBinding.push({uri: textEditor.document.uri, item: item });
     }
@@ -393,5 +547,12 @@ class DSSExtension {
             }
         }
         return undefined;
+    }
+
+    private validateInput(input: string) : string | null {
+        if (input.trim().length === 0) {
+            return 'Input cannot be empty';
+        }
+        return null;
     }
 }

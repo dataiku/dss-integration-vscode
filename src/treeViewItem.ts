@@ -1,11 +1,12 @@
 import { FileDetails } from "./FSManager";
-import { Project } from "./api/project";
+import {getLibraryContents, ProjectLibraryItem} from "./api/libraries";
 import { Recipe, getCodeRecipes } from "./api/recipe";
 import { WebAppDetails, getWebApps, getWebApp, WebApp } from "./api/webapp";
 import { getWiki, getWikiArticlesWithTaxonomies, WikiArticleWithTaxonomy, WikiTaxonomy, WikiArticle } from "./api/wiki";
 import { Plugin, PluginItem, getPluginContents } from "./api/plugin";
+import { Project } from "./api/project";
 
-const supportedExtensions = ['css', 'html', 'js', 'json', 'txt'];
+const supportedExtensions = ['css', 'html', 'js', 'json', 'txt', 'py', 'r'];
 
 export interface TreeViewItem {
     label: string;
@@ -38,9 +39,9 @@ export class ProjectsFolderTreeView implements TreeViewItem, OpenableInDSS{
 
     async getChildren(): Promise<TreeViewItem[]> {
         if (this.canEditWebApp) {
-            return [new RecipesFolderTreeView(this), new WebAppsFolderTreeView(this), new WikiFolderTreeView(this)];         
+            return [new RecipesFolderTreeView(this), new WebAppsFolderTreeView(this), new WikiFolderTreeView(this), new RootLibraryFolderTreeView(this)];
         } else {
-            return [new RecipesFolderTreeView(this), new WikiFolderTreeView(this)];
+            return [new RecipesFolderTreeView(this), new WikiFolderTreeView(this), new RootLibraryFolderTreeView(this)];
         }
     }
 
@@ -180,7 +181,7 @@ export class WikiFolderTreeView implements TreeViewItem, OpenableInDSS {
     parent: ProjectsFolderTreeView;
 
     constructor(parentItem: ProjectsFolderTreeView) {
-        this.label = "Wiki";
+        this.label = "Wikis";
         this.iconName = "wiki";
         this.collapsible = true;
         this.parent = parentItem;
@@ -231,6 +232,98 @@ export class WikiArticleTreeView implements TreeViewItem, OpenableInDSS {
 
     public urlInDSS(): string {
         return `projects/${this.dssObject.article.projectKey}/wiki/${this.dssObject.article.id}/`;
+    }
+}
+
+export class RootLibraryFolderTreeView implements TreeViewItem, OpenableInDSS {
+    dssObject: Project;
+    label: string;
+    id: string;
+    iconName: string;
+    collapsible: boolean;
+
+    constructor(projectsFolderTreeView: ProjectsFolderTreeView) {
+        this.dssObject = projectsFolderTreeView.dssObject;
+        this.label = "Libraries";
+        this.iconName = "library";
+        this.id = projectsFolderTreeView.dssObject.projectKey;
+        this.collapsible = true;
+    }
+
+    async getChildren(): Promise<TreeViewItem[]> {
+        const content = await getLibraryContents(this.id);
+        const children: TreeViewItem[] = [];
+        content.forEach((item) => {
+            if (item.children !== undefined) { // this is a folder
+                children.push(new LibraryFolderTreeView(item, this));
+            } else { // file
+                children.push(new LibraryFileTreeView(item, this));
+            }
+        });
+        return children;
+    }
+
+    public urlInDSS(): string {
+        return `projects/${this.dssObject.projectKey}/libedition/versioned`;
+    }
+}
+
+export class LibraryFolderTreeView implements TreeViewItem {
+    label: string;
+    iconName: string;
+    collapsible: boolean;
+    parent: TreeViewItem;
+    children: ProjectLibraryItem[];
+    id: string;
+    filePath: string;
+
+    constructor(item: ProjectLibraryItem, parentItem: RootLibraryFolderTreeView | LibraryFolderTreeView) {
+        this.label = item.name;
+        this.iconName = "folder";
+        this.collapsible = true;
+        this.parent = parentItem;
+        this.children = item.children!;
+        this.id = parentItem.id;
+        this.filePath = item.path;
+    }
+
+    async getChildren(): Promise<TreeViewItem[]> {
+        const children: TreeViewItem[] = [];
+        this.children.forEach((item) => {
+            if (item.children !== undefined) { // this is a folder
+                children.push(new LibraryFolderTreeView(item, this));
+            } else { // file
+                children.push(new LibraryFileTreeView(item, this));
+            }
+        });
+        return children;
+    }
+}
+
+export class LibraryFileTreeView implements TreeViewItem {
+    label: string;
+    filePath: string;
+    id: string;
+    iconName: string;
+    collapsible: boolean;
+    file: FileDetails;
+    dssObject: ProjectLibraryItem;
+    parent: RootLibraryFolderTreeView | LibraryFolderTreeView;
+
+    constructor(projectLibraryItem: ProjectLibraryItem, parent: RootLibraryFolderTreeView | LibraryFolderTreeView) {
+        this.label = projectLibraryItem.name;
+        this.id = parent.id;
+        this.parent = parent;
+        this.filePath = projectLibraryItem.path;
+        this.file =  FileDetails.fromLibrary(this.id, projectLibraryItem.path, "");
+        const extension = this.file.name.substr(this.file.name.lastIndexOf('.') + 1);
+        this.iconName = 'file' + (supportedExtensions.indexOf(extension) >= 0 ? '-' + extension : '');
+        this.collapsible = false;
+        this.dssObject = projectLibraryItem;
+    }
+
+    getChildren(): TreeViewItem[] | Thenable<TreeViewItem[]> {
+        throw new Error ("NO CHILDREN");
     }
 }
 

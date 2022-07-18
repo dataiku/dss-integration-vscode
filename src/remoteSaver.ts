@@ -6,6 +6,7 @@ import { WebApp, saveWebApp, getWebApp } from "./api/webapp";
 import { PluginItem, savePluginFile, getPluginFileContentAndType, getPluginItemDetails } from "./api/plugin";
 import { WikiArticle, getWikiArticle, saveWikiArticle } from "./api/wiki";
 import { VersionTag } from "./api/versionTag";
+import {getLibraryFileContent, ProjectLibraryItem, saveLibraryFile} from "./api/libraries";
 
 abstract class RemoteSaver<T> {
     protected abstract saveInDss(itemToSave: T): Promise<void>;
@@ -175,6 +176,47 @@ export class PluginRemoteSaver extends RemoteSaver<PluginItem> {
     }
 
     protected hasSameVersion(local: PluginItem, remote: PluginItem): boolean {
+        return local.lastModified === remote.lastModified;
+    }
+}
+
+
+export class LibraryRemoteSaver extends RemoteSaver<ProjectLibraryItem> {
+
+    private text :string;
+    private projectKey :string;
+
+    constructor(fsManager: FSManager, projectKey: string, document: TextDocument) {
+        super(fsManager);
+        this.projectKey = projectKey;
+        this.text = document.getText();
+    }
+
+    protected async printSaveSuccessMsg() {
+        window.showInformationMessage(`This file has been saved in DSS!`);
+    }
+
+    protected async saveInDss(file: ProjectLibraryItem): Promise<void> {
+        await saveLibraryFile(this.projectKey, file.path, this.text);
+    }
+
+    protected async cancelSave(remoteFile: ProjectLibraryItem): Promise<void> {
+        const projectLibraryItem = await getLibraryFileContent(this.projectKey, remoteFile.path);
+        await this.fsManager.saveInFS(FileDetails.fromLibrary(this.projectKey, remoteFile.path, projectLibraryItem.data));
+    }
+
+    protected getConflictMessage(conflictingElement: ProjectLibraryItem): string {
+        const lastModification = roundedFormat((Date.now() - conflictingElement.lastModified));
+        let message = "This content is being edited by more than one user.\n";
+        message += "It has been modified about "+ lastModification +" ago.\n";
+        return message;
+    }
+
+    protected async getRemoteObject(localFile: ProjectLibraryItem): Promise<ProjectLibraryItem> {
+        return await getLibraryFileContent(this.projectKey, localFile.path);
+    }
+
+    protected hasSameVersion(local: ProjectLibraryItem, remote: ProjectLibraryItem): boolean {
         return local.lastModified === remote.lastModified;
     }
 }

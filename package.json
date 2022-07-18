@@ -3,7 +3,7 @@
 	"publisher": "Dataiku",
 	"displayName": "Dataiku DSS",
 	"description": "Edit Dataiku DSS recipes, plugins, wiki articles and web apps directly into Visual Studio Code.",
-	"version": "1.2.0",
+	"version": "1.3.0",
 	"enableProposedApi": false,
 	"repository": {
 		"type": "git",
@@ -93,6 +93,38 @@
 				}
 			},
 			{
+				"command": "dssProjects.newLibraryFile",
+				"title": "New File",
+				"icon": {
+					"light": "resources/images/light/new-file.svg",
+					"dark": "resources/images/dark/new-file.svg"
+				}
+			},
+			{
+				"command": "dssProjects.deleteLibraryItem",
+				"title": "Delete",
+				"icon": {
+					"light": "resources/images/light/garbage.svg",
+					"dark": "resources/images/dark/garbage.svg"
+				}
+			},
+			{
+				"command": "dssProjects.newLibraryFolder",
+				"title": "New Folder",
+				"icon": {
+					"dark": "resources/images/dark/new-add-folder.svg",
+					"light": "resources/images/light/new-add-folder.svg"
+				}
+			},
+			{
+				"command": "dssProjects.renameLibraryItem",
+				"title": "Rename"
+			},
+			{
+				"command": "dssProjects.moveLibraryItem",
+				"title": "Move"
+			},
+			{
 				"command": "dssPlugins.refreshEntry",
 				"title": "Refresh",
 				"icon": {
@@ -123,6 +155,14 @@
 					"dark": "resources/images/dark/new-add-folder.svg",
 					"light": "resources/images/light/new-add-folder.svg"
 				}
+			},
+			{
+				"command": "dssPlugins.renameItem",
+				"title": "Rename"
+			},
+			{
+				"command": "dssPlugins.moveItem",
+				"title": "Move"
 			}
 		],
 		"viewsContainers": {
@@ -168,12 +208,37 @@
 				{
 					"command": "dssProjects.openInDSS",
 					"group": "actionGroup",
-					"when": "viewItem == projectFolder || viewItem == recipeFolder || viewItem == webappRootFolder || viewItem == wikiFolder || viewItem == wikiArticle || viewItem == recipe || viewItem == webappFolder || viewItem == rootPluginFolder || viewItem == createableItemAtRoot"
+					"when": "viewItem == projectFolder || viewItem == recipeFolder || viewItem == webappRootFolder || viewItem == wikiFolder || viewItem == wikiArticle || viewItem == recipe || viewItem == webappFolder || viewItem == rootPluginFolder || viewItem == createableItemAtRoot ||  viewItem == libraryRootFolder "
 				},
 				{
 					"command": "dssProjects.deleteWikiArticle",
 					"group": "actionGroup",
 					"when": "viewItem == wikiArticle"
+				},
+				{
+					"command": "dssProjects.newLibraryFolder",
+					"group": "inline",
+					"when": "viewItem == libraryFolder || viewItem == libraryRootFolder"
+				},
+				{
+					"command": "dssProjects.newLibraryFile",
+					"group": "inline",
+					"when": "viewItem == libraryFolder || viewItem == libraryRootFolder"
+				},
+				{
+					"command": "dssProjects.deleteLibraryItem",
+					"group": "actionGroup",
+					"when": "viewItem == libraryFile || viewItem == libraryFolder"
+				},
+				{
+					"command": "dssProjects.renameLibraryItem",
+					"group": "actionGroup",
+					"when": "viewItem == libraryFile || viewItem == libraryFolder"
+				},
+				{
+					"command": "dssProjects.moveLibraryItem",
+					"group": "actionGroup",
+					"when": "viewItem == libraryFile || viewItem == libraryFolder"
 				},
 				{
 					"command": "dssPlugins.newFolder",
@@ -209,6 +274,16 @@
 					"command": "dssPlugins.newFile",
 					"group": "inline",
 					"when": "viewItem == createableItemAtRoot"
+				},
+				{
+					"command": "dssPlugins.renameItem",
+					"group": "actionGroup",
+					"when": "viewItem == actionableFolder || viewItem == deletableFile"
+				},
+				{
+					"command": "dssPlugins.moveItem",
+					"group": "actionGroup",
+					"when": "viewItem == actionableFolder || viewItem == deletableFile"
 				}
 			]
 		}
