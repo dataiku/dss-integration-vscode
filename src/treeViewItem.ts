@@ -6,7 +6,7 @@ import { getWiki, getWikiArticlesWithTaxonomies, WikiArticleWithTaxonomy, WikiTa
 import { Plugin, PluginItem, getPluginContents } from "./api/plugin";
 import { Project } from "./api/project";
 
-const supportedExtensions = ['css', 'html', 'js', 'json', 'txt', 'py', 'r'];
+const supportedExtensions = ['css', 'html', 'js', 'json', 'txt'];
 
 export interface TreeViewItem {
     label: string;

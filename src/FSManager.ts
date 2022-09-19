@@ -30,10 +30,10 @@ export class FileDetails {
         return new FileDetails(fileName, content, directory);
     }
 
-    static fromLibrary(pluginId: string, filePath: string, content?: string): FileDetails {
+    static fromLibrary(projectKey: string, filePath: string, content?: string): FileDetails {
         const libraryPath = filePath.substr(0, filePath.lastIndexOf('/'));
         const fileName = filePath.substr(filePath.lastIndexOf('/') + 1);
-        let directory = "LIBRARIES/" + pluginId;
+        let directory = "LIBRARIES/" + projectKey;
         if (libraryPath !== "") {
             directory += "/" + libraryPath;
         }

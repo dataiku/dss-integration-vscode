@@ -30,19 +30,19 @@ export function saveLibraryFile(projectKey: string, path: string, content?: stri
     return RequestWrapper.post(endpoint, { body: content, json: false });
 }
 
-export function addLibraryFolder(projectKey: string, path: string) {
+export function addLibraryFolder(projectKey: string, path: string) : Promise<void>{
     const endpoint = `/projects/${projectKey}/libraries/folders/${path}`;
     return RequestWrapper.post(endpoint);
 }
 
-export function renameLibraryContent(projectKey: string, path: string, newName: string) {
-    const endpoint = `/projects/${projectKey}/libraries/contents/rename/${path}`;
-    const content = { "newName": newName };
+export function renameLibraryContent(projectKey: string, path: string, newName: string) : Promise<void>{
+    const endpoint = `/projects/${projectKey}/libraries/contents-actions/rename`;
+    const content = { "oldPath": path, "newName": newName };
     return RequestWrapper.post(endpoint, { body: content });
 }
 
-export function moveLibraryContent(projectKey: string, path: string, newPath: string) {
-    const endpoint = `/projects/${projectKey}/libraries/contents/move/${path}`;
-    const content = { "newPath": newPath };
+export function moveLibraryContent(projectKey: string, path: string, newPath: string) : Promise<void>{
+    const endpoint = `/projects/${projectKey}/libraries/contents-actions/move`;
+    const content = { "oldPath": path, "newPath": newPath };
     return RequestWrapper.post(endpoint, { body: content });
 }

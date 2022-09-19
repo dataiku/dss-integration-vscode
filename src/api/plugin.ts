@@ -76,13 +76,13 @@ export function addPluginFolder(pluginId: string, path: string) {
 }
 
 export function renamePluginContent(pluginId: string, path: string, newName: string) {
-    const endpoint = `/plugins/${pluginId}/contents/rename/${path}`;
-    const content = { "newName": newName};
+    const endpoint = `/plugins/${pluginId}/contents-actions/rename`;
+    const content = { "oldPath": path, "newName": newName};
     return RequestWrapper.post(endpoint, { body: content});
 }
 
 export function movePluginContent(pluginId: string, path: string, newPath: string) {
-    const endpoint = `/plugins/${pluginId}/contents/move/${path}`;
-    const content = { "newPath": newPath};
+    const endpoint = `/plugins/${pluginId}/contents-actions/move`;
+    const content = { "oldPath": path, "newPath": newPath};
     return RequestWrapper.post(endpoint, { body: content});
 }
