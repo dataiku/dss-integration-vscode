@@ -244,7 +244,7 @@ export class RootLibraryFolderTreeView implements TreeViewItem, OpenableInDSS {
 
     constructor(projectsFolderTreeView: ProjectsFolderTreeView) {
         this.dssObject = projectsFolderTreeView.dssObject;
-        this.label = "Libraries";
+        this.label = "lib";
         this.iconName = "library";
         this.id = projectsFolderTreeView.dssObject.projectKey;
         this.collapsible = true;
