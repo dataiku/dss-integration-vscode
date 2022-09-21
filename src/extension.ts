@@ -165,9 +165,13 @@ class DSSExtension {
     }
 
     async deletePluginItem(item: PluginFileTreeView | PluginFolderTreeView) {
-        await removePluginContents(item.id, item.filePath);
-        vscode.commands.executeCommand("dssPlugins.refreshEntry");
-        vscode.window.showInformationMessage("File/folder deleted successfully");
+        try {
+            await removePluginContents(item.id, item.filePath);
+            vscode.commands.executeCommand("dssPlugins.refreshEntry");
+            vscode.window.showInformationMessage("File/folder deleted successfully");
+        } catch(e) {
+            vscode.window.showErrorMessage(`Can not delete plugin content ${item.label}`);
+        }
     }
     
     async addPluginFile(parentItem: PluginFolderTreeView | RootPluginFolderTreeView) {
@@ -226,9 +230,14 @@ class DSSExtension {
     }
 
     async deleteLibraryItem(item: LibraryFileTreeView | LibraryFolderTreeView) {
-        await removeLibraryContents(item.id, item.filePath);
-        vscode.commands.executeCommand("dssProjects.refreshEntry");
-        vscode.window.showInformationMessage("File/folder deleted successfully");
+        try {
+            await removeLibraryContents(item.id, item.filePath);
+            vscode.commands.executeCommand("dssProjects.refreshEntry");
+            vscode.window.showInformationMessage("File/folder deleted successfully");
+        } catch (error) {
+            vscode.window.showInformationMessage(`Can not delete library content ${item.label}`);
+        }
+
     }
 
     async addLibraryFile(parentItem: LibraryFolderTreeView | RootLibraryFolderTreeView) {
@@ -416,9 +425,13 @@ class DSSExtension {
     }
     
     async deleteWikiArticle(item: WikiArticleTreeView) {
-        await deleteWikiArticle(item.dssObject);
-        vscode.commands.executeCommand("dssProjects.refreshEntry");
-        vscode.window.showInformationMessage("Wiki article \"" + item.dssObject.article.name + "\" deleted successfully");
+        try {
+            await deleteWikiArticle(item.dssObject);
+            vscode.commands.executeCommand("dssProjects.refreshEntry");
+            vscode.window.showInformationMessage("Wiki article \"" + item.dssObject.article.name + "\" deleted successfully"); 
+        } catch (error) {
+            vscode.window.showInformationMessage("Can not delete article " + item.dssObject.article.name);
+        }
     }
     
     openInDSS(item: OpenableInDSS) {
@@ -435,36 +448,57 @@ class DSSExtension {
         const doc = event.document;
         let item = this.getTreeViewItemFromUri(doc.uri);
         if (item instanceof RecipeFileTreeView) {
-            let rnp: RecipeAndPayload = {
-                recipe: (item.dssObject as Recipe),
-                payload: doc.getText()
-            };
-            await new RecipeRemoteSaver(this.fsManager).save(rnp);
-            const saved = await getRecipeAndPayload(rnp.recipe);
-            item.dssObject.versionTag = saved.recipe.versionTag;
+            try {
+                let rnp: RecipeAndPayload = {
+                    recipe: (item.dssObject as Recipe),
+                    payload: doc.getText()
+                };
+                await new RecipeRemoteSaver(this.fsManager).save(rnp);
+                const saved = await getRecipeAndPayload(rnp.recipe);
+                item.dssObject.versionTag = saved.recipe.versionTag; 
+            } catch (error) {
+                vscode.commands.executeCommand("dssProjects.refreshEntry");
+            }
         } else if (item instanceof WebAppFileTreeView) { 
-            const webAppNew = getModifiedWebApp(item.dssObject, item.label, doc.getText());
-            await new WebAppRemoteSaver(this.fsManager).save(webAppNew);
-            const saved = await getWebApp(webAppNew);
-            item.dssObject.versionTag = saved.versionTag;
+            try {
+                const webAppNew = getModifiedWebApp(item.dssObject, item.label, doc.getText());
+                await new WebAppRemoteSaver(this.fsManager).save(webAppNew);
+                const saved = await getWebApp(webAppNew);
+                item.dssObject.versionTag = saved.versionTag;
+            } catch (error) {
+                vscode.commands.executeCommand("dssProjects.refreshEntry");
+            }
         } else if (item instanceof PluginFileTreeView) {
-            await new PluginRemoteSaver(this.fsManager, item.id, doc, this.pluginsTreeDataProvider.isFullFeatured).save(item.dssObject);
-            if (this.pluginsTreeDataProvider.isFullFeatured) {
-                const saved = await getPluginItemDetails(item.id, item.filePath);
-                item.dssObject.lastModified = saved.lastModified;
+            try {
+                await new PluginRemoteSaver(this.fsManager, item.id, doc, this.pluginsTreeDataProvider.isFullFeatured).save(item.dssObject);
+                if (this.pluginsTreeDataProvider.isFullFeatured) {
+                    const saved = await getPluginItemDetails(item.id, item.filePath);
+                    item.dssObject.lastModified = saved.lastModified;
+                }
+            } catch (error) {
+                vscode.commands.executeCommand("dssPlugins.refreshEntry");
             }
         } else if (item instanceof WikiArticleTreeView) {
             let wikiArticle: WikiArticle = {
                 article: item.dssObject.article,
                 payload: doc.getText() 
             };
-            await new WikiArticleRemoteSaver(this.fsManager).save(wikiArticle);
-            const saved = await getWikiArticle(item.dssObject.article.projectKey, item.dssObject.article.id);
-            item.dssObject.article.versionTag = saved.article.versionTag;
+            try {
+                await new WikiArticleRemoteSaver(this.fsManager).save(wikiArticle);
+                const saved = await getWikiArticle(item.dssObject.article.projectKey, item.dssObject.article.id);
+                item.dssObject.article.versionTag = saved.article.versionTag;
+            } catch (error) {
+                vscode.commands.executeCommand("dssProjects.refreshEntry");
+            }
         } else if (item instanceof LibraryFileTreeView) {
-            await new LibraryRemoteSaver(this.fsManager, item.id, doc).save(item.dssObject);
-            const saved = await getLibraryFileContent(item.id, item.filePath);
-            item.dssObject.lastModified = saved.lastModified;
+            try {
+                await new LibraryRemoteSaver(this.fsManager, item.id, doc).save(item.dssObject);
+                const saved = await getLibraryFileContent(item.id, item.filePath);
+                item.dssObject.lastModified = saved.lastModified;
+            }
+            catch{
+                vscode.commands.executeCommand("dssProjects.refreshEntry");
+            }
         }
     }
     

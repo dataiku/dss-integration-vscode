@@ -108,15 +108,15 @@ export class FSManager {
     }
 
     cleanFS() {
-        this.recursivelyCleanDirecoty(this.storagePath);
+        this.recursivelyCleanDirectory(this.storagePath);
     }
 
-    private recursivelyCleanDirecoty(directoryPath: string) {
+    private recursivelyCleanDirectory(directoryPath: string) {
         if (existsSync(directoryPath)) {
             for (const entry of readdirSync(directoryPath)) {
                 var entryPath = path.join(directoryPath, entry);
                 if (lstatSync(entryPath).isDirectory()) {
-                    this.recursivelyCleanDirecoty(entryPath);
+                    this.recursivelyCleanDirectory(entryPath);
                 } else {
                     unlinkSync(entryPath);
                 }
