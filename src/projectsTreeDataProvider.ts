@@ -15,7 +15,7 @@ import {
     LibraryFolderTreeView,
     LibraryFileTreeView
 } from './treeViewItem';
-import { canEditWebApp } from './api/utils';
+import { canEditWebApp, canRenameAndMoveLibraryContents } from './api/utils';
 
 
 export class ProjectsTreeDataProvider implements vscode.TreeDataProvider<TreeViewItem>, vscode.TextDocumentContentProvider {
@@ -103,7 +103,7 @@ export class ProjectsTreeDataProvider implements vscode.TreeDataProvider<TreeVie
     public async getRoots(): Promise<TreeViewItem[]> {
         const { projects, version } =  await getProjectsWithVersion();
         return projects.map((project: Project) => {
-            return new ProjectsFolderTreeView(project, canEditWebApp(version));
+            return new ProjectsFolderTreeView(project, canEditWebApp(version), canRenameAndMoveLibraryContents(version));
         }).sort(sortTreeViewItems);
     }
     

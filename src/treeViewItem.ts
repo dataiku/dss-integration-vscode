@@ -29,12 +29,15 @@ export class ProjectsFolderTreeView implements TreeViewItem, OpenableInDSS{
 
     dssObject: Project;
     canEditWebApp: boolean;
-    constructor(project: Project, canEditWebApp: boolean) {
+    canRenameAndMoveLibraryContents: boolean;
+
+    constructor(project: Project, canEditWebApp: boolean, canRenameAndMoveLibraryContents: boolean) {
         this.label = project.name;
         this.iconName = "project";
         this.collapsible = true;
         this.dssObject = project;
         this.canEditWebApp = canEditWebApp;
+        this.canRenameAndMoveLibraryContents = canRenameAndMoveLibraryContents;
     }
 
     async getChildren(): Promise<TreeViewItem[]> {
@@ -241,6 +244,7 @@ export class RootLibraryFolderTreeView implements TreeViewItem, OpenableInDSS {
     id: string;
     iconName: string;
     collapsible: boolean;
+    canRenameAndMoveLibraryContents: boolean;
 
     constructor(projectsFolderTreeView: ProjectsFolderTreeView) {
         this.dssObject = projectsFolderTreeView.dssObject;
@@ -248,6 +252,7 @@ export class RootLibraryFolderTreeView implements TreeViewItem, OpenableInDSS {
         this.iconName = "library";
         this.id = projectsFolderTreeView.dssObject.projectKey;
         this.collapsible = true;
+        this.canRenameAndMoveLibraryContents = projectsFolderTreeView.canRenameAndMoveLibraryContents;
     }
 
     async getChildren(): Promise<TreeViewItem[]> {
@@ -276,6 +281,7 @@ export class LibraryFolderTreeView implements TreeViewItem {
     children: ProjectLibraryItem[];
     id: string;
     filePath: string;
+    canRenameAndMoveLibraryContents: boolean;
 
     constructor(item: ProjectLibraryItem, parentItem: RootLibraryFolderTreeView | LibraryFolderTreeView) {
         this.label = item.name;
@@ -285,6 +291,7 @@ export class LibraryFolderTreeView implements TreeViewItem {
         this.children = item.children!;
         this.id = parentItem.id;
         this.filePath = item.path;
+        this.canRenameAndMoveLibraryContents = parentItem.canRenameAndMoveLibraryContents;
     }
 
     async getChildren(): Promise<TreeViewItem[]> {
@@ -309,6 +316,7 @@ export class LibraryFileTreeView implements TreeViewItem {
     file: FileDetails;
     dssObject: ProjectLibraryItem;
     parent: RootLibraryFolderTreeView | LibraryFolderTreeView;
+    canRenameAndMoveLibraryContents: boolean;
 
     constructor(projectLibraryItem: ProjectLibraryItem, parent: RootLibraryFolderTreeView | LibraryFolderTreeView) {
         this.label = projectLibraryItem.name;
@@ -320,6 +328,7 @@ export class LibraryFileTreeView implements TreeViewItem {
         this.iconName = 'file' + (supportedExtensions.indexOf(extension) >= 0 ? '-' + extension : '');
         this.collapsible = false;
         this.dssObject = projectLibraryItem;
+        this.canRenameAndMoveLibraryContents = parent.canRenameAndMoveLibraryContents;
     }
 
     getChildren(): TreeViewItem[] | Thenable<TreeViewItem[]> {
@@ -333,13 +342,15 @@ export class RootPluginFolderTreeView implements TreeViewItem, OpenableInDSS {
     id: string;
     iconName: string;
     collapsible: boolean;
+    canRenameAndMovePluginContents: boolean;
 
-    constructor(plugin: Plugin) {
+    constructor(plugin: Plugin, canRenameAndMovePluginContents: boolean) {
         this.dssObject = plugin;
         this.label = plugin.meta.label;
         this.id = plugin.id;
         this.iconName = "plugin";
         this.collapsible = true;
+        this.canRenameAndMovePluginContents = canRenameAndMovePluginContents;
     }
 
     async getChildren(): Promise<TreeViewItem[]> {
@@ -368,6 +379,7 @@ export class PluginFolderTreeView implements TreeViewItem {
     children: PluginItem[];
     id: string;
     filePath: string;
+    canRenameAndMovePluginContents: boolean;
 
     constructor(item: PluginItem, parentItem: RootPluginFolderTreeView | PluginFolderTreeView) {
         this.label = item.name;
@@ -377,6 +389,7 @@ export class PluginFolderTreeView implements TreeViewItem {
         this.children = item.children!;
         this.id = parentItem.id;
         this.filePath = item.path;
+        this.canRenameAndMovePluginContents = parentItem.canRenameAndMovePluginContents;
     }
 
     async getChildren(): Promise<TreeViewItem[]> {
@@ -401,6 +414,7 @@ export class PluginFileTreeView implements TreeViewItem {
     file: FileDetails;
     dssObject: PluginItem;
     parent: RootPluginFolderTreeView | PluginFolderTreeView;
+    canRenameAndMovePluginContents: boolean;
 
     constructor(pluginItem: PluginItem, parent: RootPluginFolderTreeView | PluginFolderTreeView) {
         this.label = pluginItem.name;
@@ -412,6 +426,7 @@ export class PluginFileTreeView implements TreeViewItem {
         this.iconName = 'file' + (supportedExtensions.indexOf(extension) >= 0 ? '-' + extension : '');
         this.collapsible = false;
         this.dssObject = pluginItem;
+        this.canRenameAndMovePluginContents = parent.canRenameAndMovePluginContents;
     }
 
     getChildren(): TreeViewItem[] | Thenable<TreeViewItem[]> {
