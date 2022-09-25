@@ -186,6 +186,10 @@ class DSSExtension {
     }
 
     async renamePluginItem(item: PluginFolderTreeView | PluginFileTreeView) {
+        if(!item.canRenameAndMovePluginContents){
+            vscode.window.showErrorMessage(`Rename operation is not supported on your version of DSS`);
+            return;
+        }
         const newName = await vscode.window.showInputBox({
             placeHolder: "New name",
             prompt: "Enter the new name for this content",
@@ -202,6 +206,10 @@ class DSSExtension {
     }
 
     async movePluginItem(item: PluginFolderTreeView | PluginFileTreeView) {
+        if(!item.canRenameAndMovePluginContents){
+            vscode.window.showErrorMessage(`Move operation is not supported on your version of DSS`);
+            return;
+        }
         const newPath = await vscode.window.showInputBox({
             placeHolder: "To directory",
             prompt: "Enter the path to the destination",
@@ -219,6 +227,10 @@ class DSSExtension {
     }
 
     async addLibraryFolder(parentItem: LibraryFolderTreeView | RootLibraryFolderTreeView) {
+        if(!parentItem.canRenameAndMoveLibraryContents){
+            vscode.window.showErrorMessage(`Add folder operation is not supported on your version of DSS`);
+            return;
+        }
         const folderName = await vscode.window.showInputBox();
         if (folderName) {
             try {
@@ -252,6 +264,10 @@ class DSSExtension {
     }
 
     async renameLibraryItem(item: LibraryFolderTreeView | LibraryFileTreeView) {
+        if(!item.canRenameAndMoveLibraryContents){
+            vscode.window.showErrorMessage(`Rename operation is not supported on your version of DSS`);
+            return;
+        }
         const newName = await vscode.window.showInputBox({
             placeHolder: "New name",
             prompt: "Enter the new name for this content",
@@ -268,6 +284,10 @@ class DSSExtension {
     }
 
     async moveLibraryItem(item: LibraryFolderTreeView | LibraryFileTreeView) {
+        if(!item.canRenameAndMoveLibraryContents){
+            vscode.window.showErrorMessage(`Move operation is not supported on your version of DSS`);
+            return;
+        }
         const newPath = await vscode.window.showInputBox({
             placeHolder: "To directory",
             prompt: "Enter the path to the destination",
