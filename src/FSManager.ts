@@ -30,6 +30,19 @@ export class FileDetails {
         return new FileDetails(fileName, content, directory);
     }
 
+    static fromLibrary(projectKey: string, filePath: string, content?: string): FileDetails {
+        const libraryPath = filePath.substr(0, filePath.lastIndexOf('/'));
+        const fileName = filePath.substr(filePath.lastIndexOf('/') + 1);
+        let directory = "lib/" + projectKey;
+        if (libraryPath !== "") {
+            directory += "/" + libraryPath;
+        }
+        if (content === undefined) {
+            content = "";
+        }
+        return new FileDetails(fileName, content, directory);
+    }
+
     static fromWebApp(webApp: WebApp): FileDetails[] {
         const files: FileDetails[]  = [];
         const dir = webApp.projectKey + "/WEBAPPS/" + webApp.name;
@@ -95,15 +108,15 @@ export class FSManager {
     }
 
     cleanFS() {
-        this.recursivelyCleanDirecoty(this.storagePath);
+        this.recursivelyCleanDirectory(this.storagePath);
     }
 
-    private recursivelyCleanDirecoty(directoryPath: string) {
+    private recursivelyCleanDirectory(directoryPath: string) {
         if (existsSync(directoryPath)) {
             for (const entry of readdirSync(directoryPath)) {
                 var entryPath = path.join(directoryPath, entry);
                 if (lstatSync(entryPath).isDirectory()) {
-                    this.recursivelyCleanDirecoty(entryPath);
+                    this.recursivelyCleanDirectory(entryPath);
                 } else {
                     unlinkSync(entryPath);
                 }

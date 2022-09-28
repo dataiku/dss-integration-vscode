@@ -1,7 +1,21 @@
 import * as vscode from 'vscode';
 import { Project, getProjectsWithVersion } from './api/project';
-import { TreeViewItem, sortTreeViewItems, RecipeFileTreeView, WebAppsFolderTreeView, WebAppFolderTreeView, WebAppFileTreeView, ProjectsFolderTreeView, WikiFolderTreeView, WikiArticleTreeView, RecipesFolderTreeView } from './treeViewItem';
-import { canEditWebApp } from './api/utils';
+import {
+    TreeViewItem,
+    sortTreeViewItems,
+    RecipeFileTreeView,
+    WebAppsFolderTreeView,
+    WebAppFolderTreeView,
+    WebAppFileTreeView,
+    ProjectsFolderTreeView,
+    WikiFolderTreeView,
+    WikiArticleTreeView,
+    RecipesFolderTreeView,
+    RootLibraryFolderTreeView,
+    LibraryFolderTreeView,
+    LibraryFileTreeView
+} from './treeViewItem';
+import { canEditWebApp, canRenameAndMoveLibraryContents } from './api/utils';
 
 
 export class ProjectsTreeDataProvider implements vscode.TreeDataProvider<TreeViewItem>, vscode.TextDocumentContentProvider {
@@ -53,7 +67,7 @@ export class ProjectsTreeDataProvider implements vscode.TreeDataProvider<TreeVie
         } else if (item instanceof WebAppFolderTreeView) {
             treeItem.contextValue = "webappFolder";
         } else if (item instanceof ProjectsFolderTreeView) {
-            treeItem.contextValue = "projectFolder"
+            treeItem.contextValue = "projectFolder";
         } else if (item instanceof WikiArticleTreeView) {
             treeItem.command = {
                 command: "dssProjects.openWikiArticle",
@@ -63,6 +77,17 @@ export class ProjectsTreeDataProvider implements vscode.TreeDataProvider<TreeVie
             treeItem.contextValue = "wikiArticle";
         } else if (item instanceof WikiFolderTreeView) {
             treeItem.contextValue = "wikiFolder";
+        } else if (item instanceof RootLibraryFolderTreeView) {
+            treeItem.contextValue = "libraryRootFolder";
+        } else if (item instanceof LibraryFolderTreeView) {
+            treeItem.contextValue = "libraryFolder";
+        } else if (item instanceof LibraryFileTreeView) {
+            treeItem.contextValue = "libraryFile";
+            treeItem.command = {
+                command: "dssProjects.openLibraryFile",
+                title: "Open library file",
+                arguments: [item]
+            };
         }
         return treeItem;
 	}
@@ -78,7 +103,7 @@ export class ProjectsTreeDataProvider implements vscode.TreeDataProvider<TreeVie
     public async getRoots(): Promise<TreeViewItem[]> {
         const { projects, version } =  await getProjectsWithVersion();
         return projects.map((project: Project) => {
-            return new ProjectsFolderTreeView(project, canEditWebApp(version));
+            return new ProjectsFolderTreeView(project, canEditWebApp(version), canRenameAndMoveLibraryContents(version));
         }).sort(sortTreeViewItems);
     }
     

@@ -5,13 +5,14 @@ import { roundedFormat } from "./utils";
 import { WebApp, saveWebApp, getWebApp } from "./api/webapp";
 import { PluginItem, savePluginFile, getPluginFileContentAndType, getPluginItemDetails } from "./api/plugin";
 import { WikiArticle, getWikiArticle, saveWikiArticle } from "./api/wiki";
-import { VersionTag } from "./api/versionTag";
+import {getLibraryFileContent, ProjectLibraryItem, saveLibraryFile} from "./api/libraries";
+import { debug } from "console";
 
 abstract class RemoteSaver<T> {
     protected abstract saveInDss(itemToSave: T): Promise<void>;
     protected abstract cancelSave(remoteItem: T): Promise<void>;
-    protected abstract hasSameVersion(local: T, remote: T): boolean;
-    protected abstract getConflictMessage(conflictingElement: T): string;
+    protected abstract hasSameVersion(local: T, remote: T | null): boolean;
+    protected abstract getConflictMessage(conflictingElement: T | null): string;
     protected abstract printSaveSuccessMsg(): void;
     protected abstract getRemoteObject(localObject: T): Promise<T>;
 
@@ -23,7 +24,13 @@ abstract class RemoteSaver<T> {
     
     public async save(objectToSave: T): Promise<void> {
         if (this.canGetRemoteObject) {
-            const remoteObject = await this.getRemoteObject(objectToSave);
+            let remoteObject: T | null = null;
+            try {
+                remoteObject = await this.getRemoteObject(objectToSave);
+            } catch (error) {
+                debug("Remote object not retrieved");
+            }
+            
             if (this.hasSameVersion(objectToSave, remoteObject)) {
                 await this.saveInDss(objectToSave);
                 this.printSaveSuccessMsg();
@@ -34,7 +41,9 @@ abstract class RemoteSaver<T> {
                     await this.saveInDss(objectToSave);
                     this.printSaveSuccessMsg();
                 } else if (action === SaveAction.Discard.toString()) {
-                    await this.cancelSave(remoteObject);
+                    if(remoteObject !== null){
+                        await this.cancelSave(remoteObject);
+                    }
                 } else { // Cancel
                     throw new Error("Save cancelled");
                 }
@@ -43,15 +52,6 @@ abstract class RemoteSaver<T> {
             await this.saveInDss(objectToSave);
             this.printSaveSuccessMsg();
         }
-    }
-
-    protected generateConflictMessage(versionTag: VersionTag, objectType: string): string {
-        const lastModifier = versionTag.lastModifiedBy.login;
-        const lastModification = roundedFormat((Date.now() - versionTag.lastModifiedOn));
-
-        let message = "This " + objectType + " is being edited by more than one user.\n";
-        message += "It has been modified about "+ lastModification + " ago by "+ lastModifier +".\n";
-        return message;
     }
 }
 
@@ -70,18 +70,34 @@ export class RecipeRemoteSaver extends RemoteSaver<RecipeAndPayload> {
     }
     
     protected async cancelSave(remoteRecipe: RecipeAndPayload): Promise<void> {
-        await this.fsManager.saveInFS(FileDetails.fromRecipe(remoteRecipe));
+        if(remoteRecipe.recipe){
+            await this.fsManager.saveInFS(FileDetails.fromRecipe(remoteRecipe));
+        }
     }
 
-    protected getConflictMessage(conflictingElement: RecipeAndPayload): string {
-        return this.generateConflictMessage(conflictingElement.recipe.versionTag, "recipe");
+    protected getConflictMessage(conflictingElement: RecipeAndPayload | null): string {
+        let message = "This recipe is being edited by more than one user.\n";
+
+        if(conflictingElement !== null && conflictingElement.recipe){
+            const lastModifier = conflictingElement.recipe.versionTag.lastModifiedBy.login;
+            const lastModification = roundedFormat((Date.now() - conflictingElement.recipe.versionTag.lastModifiedOn));
+    
+            message += "It has been modified about "+ lastModification + " ago by "+ lastModifier +".\n";
+        }else{
+            message += "It has been deleted.\n";
+        }
+
+        return message;
     }
 
     protected async getRemoteObject(localRecipeAndPayload: RecipeAndPayload): Promise<RecipeAndPayload> {
         return await getRecipeAndPayload(localRecipeAndPayload.recipe);
     }  
 
-    protected hasSameVersion(rnpLocal: RecipeAndPayload, rnpRemote: RecipeAndPayload): boolean {
+    protected hasSameVersion(rnpLocal: RecipeAndPayload, rnpRemote: RecipeAndPayload | null): boolean {
+        if(rnpRemote === null || !rnpRemote.recipe){
+            return false;
+        }
         return rnpLocal.recipe.versionTag.versionNumber === rnpRemote.recipe.versionTag.versionNumber;
     }
 }
@@ -100,19 +116,34 @@ export class WebAppRemoteSaver extends RemoteSaver<WebApp> {
     }
 
     protected getConflictMessage(conflictingElement: WebApp): string {
-        return this.generateConflictMessage(conflictingElement.versionTag, "webapp");
+        let message = "This webapp is being edited by more than one user.\n";
+
+        if(conflictingElement !== null){
+            const lastModifier = conflictingElement.versionTag.lastModifiedBy.login;
+            const lastModification = roundedFormat((Date.now() - conflictingElement.versionTag.lastModifiedOn));
+    
+            message += "It has been modified about "+ lastModification + " ago by "+ lastModifier +".\n";
+        }else{
+            message += "It has been deleted.\n";
+        }
+
+        return message;    
     }
 
     protected async getRemoteObject(localWebapp: WebApp): Promise<WebApp> {
         return await getWebApp(localWebapp);
     }
 
-    protected hasSameVersion(local: WebApp, remote: WebApp): boolean {
+    protected hasSameVersion(local: WebApp, remote: WebApp | null): boolean {
+        if(remote === null){
+            return false;
+        }
         return local.versionTag.versionNumber === remote.versionTag.versionNumber;
     }
 }
 
 export class WikiArticleRemoteSaver extends RemoteSaver<WikiArticle> {
+
     protected async printSaveSuccessMsg() {
         window.showInformationMessage(`The wiki article has been saved in DSS!`);
     }
@@ -126,14 +157,28 @@ export class WikiArticleRemoteSaver extends RemoteSaver<WikiArticle> {
     }
 
     protected getConflictMessage(conflictingElement: WikiArticle): string {
-        return this.generateConflictMessage(conflictingElement.article.versionTag, "wiki article");
+        let message = "This wiki article is being edited by more than one user.\n";
+
+        if(conflictingElement !== null){
+            const lastModifier = conflictingElement.article.versionTag.lastModifiedBy.login;
+            const lastModification = roundedFormat((Date.now() - conflictingElement.article.versionTag.lastModifiedOn));
+    
+            message += "It has been modified about "+ lastModification + " ago by "+ lastModifier +".\n";
+        }else{
+            message += "It has been deleted.\n";
+        }
+
+        return message;     
     }
 
     protected async getRemoteObject(localWikiArticle: WikiArticle): Promise<WikiArticle> {
         return await getWikiArticle(localWikiArticle.article.projectKey, localWikiArticle.article.id);
     }
 
-    protected hasSameVersion(localWikiArticle: WikiArticle, remoteWikiArticle: WikiArticle): boolean {
+    protected hasSameVersion(localWikiArticle: WikiArticle, remoteWikiArticle: WikiArticle | null): boolean {
+        if(remoteWikiArticle === null){
+            return false;
+        }
         return localWikiArticle.article.versionTag.versionNumber === remoteWikiArticle.article.versionTag.versionNumber;
     }
 }
@@ -164,9 +209,14 @@ export class PluginRemoteSaver extends RemoteSaver<PluginItem> {
     }
 
     protected getConflictMessage(conflictingElement: PluginItem): string {
-        const lastModification = roundedFormat((Date.now() - conflictingElement.lastModified));
         let message = "This content is being edited by more than one user.\n";
-        message += "It has been modified about "+ lastModification +" ago.\n";
+
+        if(conflictingElement){
+            const lastModification = roundedFormat((Date.now() - conflictingElement.lastModified));
+            message += "It has been modified about "+ lastModification +" ago.\n";
+        }else{
+            message += "It has been deleted.\n";
+        }
         return message;
     }
 
@@ -174,7 +224,59 @@ export class PluginRemoteSaver extends RemoteSaver<PluginItem> {
         return await getPluginItemDetails(this.pluginId, localFile.path);
     }
 
-    protected hasSameVersion(local: PluginItem, remote: PluginItem): boolean {
+    protected hasSameVersion(local: PluginItem, remote: PluginItem | null): boolean {
+        if(remote === null){
+            return false;
+        }
+        return local.lastModified === remote.lastModified;
+    }
+}
+
+
+export class LibraryRemoteSaver extends RemoteSaver<ProjectLibraryItem> {
+
+    private text :string;
+    private projectKey :string;
+
+    constructor(fsManager: FSManager, projectKey: string, document: TextDocument) {
+        super(fsManager);
+        this.projectKey = projectKey;
+        this.text = document.getText();
+    }
+
+    protected async printSaveSuccessMsg() {
+        window.showInformationMessage(`This file has been saved in DSS!`);
+    }
+
+    protected async saveInDss(file: ProjectLibraryItem): Promise<void> {
+        await saveLibraryFile(this.projectKey, file.path, this.text);
+    }
+
+    protected async cancelSave(remoteFile: ProjectLibraryItem): Promise<void> {
+        const projectLibraryItem = await getLibraryFileContent(this.projectKey, remoteFile.path);
+        await this.fsManager.saveInFS(FileDetails.fromLibrary(this.projectKey, remoteFile.path, projectLibraryItem.data));
+    }
+
+    protected getConflictMessage(conflictingElement: ProjectLibraryItem): string {
+        let message = "This content is being edited by more than one user.\n";
+
+        if(conflictingElement !== null){
+            const lastModification = roundedFormat((Date.now() - conflictingElement.lastModified));
+            message += "It has been modified about "+ lastModification +" ago.\n";
+        }else{
+            message += "It has been deleted.\n";
+        }
+        return message;
+    }
+
+    protected async getRemoteObject(localFile: ProjectLibraryItem): Promise<ProjectLibraryItem> {
+        return await getLibraryFileContent(this.projectKey, localFile.path);
+    }
+
+    protected hasSameVersion(local: ProjectLibraryItem, remote: ProjectLibraryItem | null): boolean {
+        if(remote === null){
+            return false;
+        }
         return local.lastModified === remote.lastModified;
     }
 }

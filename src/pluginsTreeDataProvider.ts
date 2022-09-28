@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { Plugin, getPluginsWithVersion } from './api/plugin';
 import { TreeViewItem, PluginFileTreeView, RootPluginFolderTreeView, PluginFolderTreeView } from './treeViewItem';
-import { canCreateFolderAndSafelySave } from './api/utils';
+import { canCreateFolderAndSafelySave, canRenameAndMovePluginContents } from './api/utils';
 
 export class PluginsTreeDataProvider implements vscode.TreeDataProvider<TreeViewItem>, vscode.TextDocumentContentProvider {
 
@@ -84,7 +84,7 @@ export class PluginsTreeDataProvider implements vscode.TreeDataProvider<TreeView
         this.isFullFeatured = canCreateFolderAndSafelySave(version);
 
         return plugins.map((plugin: Plugin) => {
-            return new RootPluginFolderTreeView(plugin);
+            return new RootPluginFolderTreeView(plugin, canRenameAndMovePluginContents(version));
         }).sort((p1, p2) => p1.label.localeCompare(p2.label));
     }    
 

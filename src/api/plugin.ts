@@ -73,4 +73,16 @@ export function savePluginFile(pluginKey: string, path: string, content?: string
 export function addPluginFolder(pluginId: string, path: string) {
     const endpoint = `/plugins/${pluginId}/folders/${path}`;
     return RequestWrapper.post(endpoint);
-} 
+}
+
+export function renamePluginContent(pluginId: string, path: string, newName: string) {
+    const endpoint = `/plugins/${pluginId}/contents-actions/rename`;
+    const content = { "oldPath": path, "newName": newName};
+    return RequestWrapper.post(endpoint, { body: content});
+}
+
+export function movePluginContent(pluginId: string, path: string, newPath: string) {
+    const endpoint = `/plugins/${pluginId}/contents-actions/move`;
+    const content = { "oldPath": path, "newPath": newPath};
+    return RequestWrapper.post(endpoint, { body: content});
+}
