@@ -1,13 +1,11 @@
 # Dataiku DSS Visual Studio Code Extension
 
-Easily edit code Recipes, Web App files, Plugin files of your DSS projects right into VSCode.
+Easily edit code Recipes, code Libraries, Web App files and Plugin files of your DSS projects right into VSCode.
 
 ## Features
 
 The extension offers a new menu in the left panel (with the Dataiku logo). Through it, you can browse your projects and plugins.<br>
 Depending on the version of your DSS instance, some features might not be available.
-
-### DSS > 5.0.0
 
 #### Code Recipe
 
@@ -17,16 +15,16 @@ When a code recipe is open you will find in the bottom bar a button to run this 
 
 ### Wiki
 
-You can browse all the wiki articles of a project, create, remove, edit and save them back into DSS.
+You can browse all wiki articles of a project, create, remove, edit and save them back into DSS.
+
+### Libraries
+
+You can browse all files in the code libraries of a project. You can then add, remove or edit these files and the changes will be reflected into DSS.
 
 #### Plugins
 
 You can browse into your plugins' hierarchy, edit the files and when you save them, they will be saved back into DSS.
 When you select a folder, a new icon will appear to let you add new files in this folder.
-
-Note: When working with a DSS 5.1.3 or lower instance, saving a plugin file saving a plugin file will overide the one on the DSS instance even if it's more recent.
-
-### DSS >= 5.1.0
 
 #### Code Recipe
 
@@ -34,20 +32,17 @@ Python and R recipe can be **run locally**. To do so you will need:
 - to have the *dataiku* package installed on your machine: to install it, follow the instructions [here for Python](https://doc.dataiku.com/dss/latest/python-api/outside-usage.html#using-the-dataiku-package), and [here for R](https://doc.dataiku.com/dss/latest/R-api/outside-usage.html#installing-the-dataiku-package)
 - to have a Python or R extension to run easily the file (make sure it uses the right interpretor, with the dataiku package). For instance the [Microsoft Python Extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) allows you to select a Python interpretor, and run the open file (open command Palette and search for *Python: Run Python File in Terminal*)
 
-### DSS >= 5.1.4
-
 #### Web Apps
 
 Web apps can be listed, browsed and their files edited and saved into DSS.
 
 #### Plugins
-Starting with DSS 5.1.4, saving a plugin file will not replace the remote one if it's more recent, but will print a window to prevent conflicts.
 
 Plugins folders and files can be deleted directly from the hierarchy. Folders such as files can also be added.  
 
 ## Requirements
 
-- Access to DSS instance running version 5.0 or above
+- Access to DSS instance running version 6.0.0 or above
 - a valid Personal API key
 
 ## Extension Settings
