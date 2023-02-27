@@ -11,12 +11,17 @@ export interface WebAppDetails {
 export enum WebAppType {
     SHINY="SHINY",
     BOKEH="BOKEH",
+    DASH="DASH",
     STANDARD="STANDARD",
 }
 
 export interface WebApp extends WebAppDetails {
-    params: BokehWebAppParams | ShinyWebAppParams | StandardWebAppParams;
+    params: BokehWebAppParams | DashWebAppParams | ShinyWebAppParams | StandardWebAppParams;
     versionTag: VersionTag;
+}
+
+export interface DashWebAppParams {
+    python: string;
 }
 
 export interface BokehWebAppParams {
@@ -48,7 +53,7 @@ export enum WebAppFile {
 export function getModifiedWebApp(webApp: WebApp, modifiedFileName: string, newContent: string) {
     switch(modifiedFileName) {
         case WebAppFile.BACKEND:
-            (webApp.params as BokehWebAppParams | StandardWebAppParams).python = newContent;
+            (webApp.params as BokehWebAppParams | DashWebAppParams | StandardWebAppParams).python = newContent;
             break;
         case WebAppFile.UI:
             (webApp.params as ShinyWebAppParams).ui = newContent;
