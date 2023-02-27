@@ -1,4 +1,4 @@
-import { WebApp, WebAppType, BokehWebAppParams, ShinyWebAppParams, StandardWebAppParams, WebAppFile } from "./api/webapp";
+import { WebApp, WebAppType, BokehWebAppParams, DashWebAppParams, ShinyWebAppParams, StandardWebAppParams, WebAppFile } from "./api/webapp";
 import { RecipeAndPayload } from "./api/recipe";
 import { WikiArticle } from "./api/wiki";
 import { writeFile, existsSync, mkdirSync, rmdirSync, readdirSync, lstatSync, unlinkSync } from "fs";
@@ -49,6 +49,11 @@ export class FileDetails {
 
         if (webApp.type === WebAppType.BOKEH) {
             const params = webApp.params as BokehWebAppParams;
+            files.push(
+                new FileDetails(WebAppFile.BACKEND, params.python, dir)
+            );
+        } else if (webApp.type === WebAppType.DASH) {
+            const params = webApp.params as DashWebAppParams;
             files.push(
                 new FileDetails(WebAppFile.BACKEND, params.python, dir)
             );
