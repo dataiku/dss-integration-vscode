@@ -34,6 +34,7 @@ import {RecipeRemoteSaver, WebAppRemoteSaver, WikiArticleRemoteSaver, PluginRemo
 import { DSSConfiguration } from './dssConfiguration';
 import { getOuputToBuild } from './api/recipeOutput';
 import {addLibraryFolder, getLibraryFileContent, moveLibraryContent, removeLibraryContents, renameLibraryContent, saveLibraryFile} from "./api/libraries";
+import {TextDocument} from "vscode";
 
 interface TabBinding {
     uri: vscode.Uri;
@@ -92,7 +93,35 @@ export async function activate(context: vscode.ExtensionContext) {
 
     /***    TEXT DOCUMENT EVENTS   ***/
     vscode.window.onDidChangeActiveTextEditor((textEditor: vscode.TextEditor | undefined) => dssExtension.selectTreeViewItem(textEditor));
-    vscode.workspace.onWillSaveTextDocument((event) => event.waitUntil(dssExtension.saveInDss(event)));
+
+    /*
+       Implements a queuing mechanism for save request:
+       - Only one pending request at a time
+       - If a save event is triggered while there is a pending request, it is enqueued, only the latest event is kept.
+       - next save request is fired when previous one is finished.
+     */
+    let nextDocToSync: vscode.TextDocument | null = null;
+    let isSaving = false;
+    function runOrEnqueueSaveDocumentRequest(doc: vscode.TextDocument) {
+        if (isSaving) {
+            // if a save request is already pending, enqueue document to be saved later, (only keep the last version)
+            nextDocToSync = doc;
+        } else {
+            // if no current save request is pending just fire it right now.
+            isSaving = true;
+            dssExtension.saveInDss(doc).finally(() => {
+                isSaving = false;
+                // check if there is en enqueued document to be saved, if so save it.
+                if (nextDocToSync) {
+                    const localNextDocToSync = nextDocToSync;
+                    nextDocToSync = null;
+                    runOrEnqueueSaveDocumentRequest(localNextDocToSync);
+                }
+            })
+        }
+    }
+
+    vscode.workspace.onDidSaveTextDocument((doc) => runOrEnqueueSaveDocumentRequest(doc));
     vscode.workspace.onDidCloseTextDocument((doc: vscode.TextDocument) => dssExtension.documentOnCloseCleanup(doc));
 }
 
@@ -464,8 +493,7 @@ class DSSExtension {
         this.addTabBinding(textEditor, item);
     }
     
-    async saveInDss(event: vscode.TextDocumentWillSaveEvent) {
-        const doc = event.document;
+    async saveInDss(doc: TextDocument) {
         let item = this.getTreeViewItemFromUri(doc.uri);
         if (item instanceof RecipeFileTreeView) {
             try {
