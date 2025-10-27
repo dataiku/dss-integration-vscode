@@ -2,7 +2,11 @@
 
 All notable changes to the "dataiku-dss" extension will be documented in this file.
 
-## 1.3.0 - To be defined when publishing the extension
+## 1.3.1 - Oct 27, 2025
+
+- Fixed an issue causing saves to DSS to stop working after repeated timeouts.
+
+## 1.3.0 - Sep 28, 2022
 
 - Added support for project libraries.
 - Added ability to rename or move plugin content.
