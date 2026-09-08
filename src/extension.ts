@@ -396,9 +396,9 @@ class DSSExtension {
     
     async openCodeRecipeFile(item: RecipeFileTreeView) {
         const recipeAndPayload = await getRecipeAndPayload(item.dssObject);
-        // When opening the recipe, update it at the same time
-        item.dssObject = recipeAndPayload.recipe;
         const { recipe } = recipeAndPayload;
+        // When opening the recipe, update it at the same time
+        item.dssObject = recipe;
         const filePath = await this.fsManager.saveInFS(FileDetails.fromRecipe(recipeAndPayload));
         await this.openTextDocumentSafely(filePath, item);    
         this.statusBarItemsMap.showForRecipe(recipe);
