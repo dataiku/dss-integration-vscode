@@ -395,9 +395,10 @@ class DSSExtension {
     }
     
     async openCodeRecipeFile(item: RecipeFileTreeView) {
-        const recipe = item.dssObject;
-        const recipeAndPayload = await getRecipeAndPayload(recipe);
-        item.dssObject.versionTag = recipeAndPayload.recipe.versionTag;
+        const recipeAndPayload = await getRecipeAndPayload(item.dssObject);
+        // When opening the recipe, update it at the same time
+        item.dssObject = recipeAndPayload.recipe;
+        const { recipe } = recipeAndPayload;
         const filePath = await this.fsManager.saveInFS(FileDetails.fromRecipe(recipeAndPayload));
         await this.openTextDocumentSafely(filePath, item);    
         this.statusBarItemsMap.showForRecipe(recipe);
@@ -503,7 +504,8 @@ class DSSExtension {
                 };
                 await new RecipeRemoteSaver(this.fsManager).save(rnp);
                 const saved = await getRecipeAndPayload(rnp.recipe);
-                item.dssObject.versionTag = saved.recipe.versionTag; 
+                // Once saved, update the local instance. The versionTag is assigned server-side
+                item.dssObject = saved.recipe;
             } catch (error) {
                 vscode.commands.executeCommand("dssProjects.refreshEntry");
             }
