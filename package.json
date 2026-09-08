@@ -17,7 +17,7 @@
 	},
 	"icon": "resources/images/dataiku-logo.png",
 	"engines": {
-		"vscode": "^1.32.0"
+		"vscode": "^1.135.0"
 	},
 	"categories": [
 		"Other"
