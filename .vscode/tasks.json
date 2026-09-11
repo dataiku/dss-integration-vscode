@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "watch",
+			"group": "build",
+			"problemMatcher": [
+				"$tsc-watch"
+			],
+			"label": "npm: watch",
+			"detail": "webpack --mode none --watch",
+			"isBackground": true,
+		}
+	]
+}

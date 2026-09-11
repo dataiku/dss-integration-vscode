@@ -12,9 +12,6 @@
 			"args": [	
 				"--extensionDevelopmentPath=${workspaceFolder}"	
 			],	
-			"outFiles": [	
-				"${workspaceFolder}/out/**/*.js"	
-			],	
 			"preLaunchTask": "npm: watch"	
 		},	
 		{	
@@ -25,9 +22,6 @@
 			"args": [	
 				"--extensionDevelopmentPath=${workspaceFolder}",	
 				"--extensionTestsPath=${workspaceFolder}/out/test"	
-			],	
-			"outFiles": [	
-				"${workspaceFolder}/out/test/**/*.js"	
 			],	
 			"preLaunchTask": "npm: watch"	
 		}	
