@@ -14,7 +14,7 @@ export interface Recipe {
                 }>
         }
     };
-    versionTag: VersionTag;
+    versionTag?: VersionTag | null;
 }
 
 export interface RecipeAndPayload {
