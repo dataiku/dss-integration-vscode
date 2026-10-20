@@ -7,6 +7,7 @@ import { PluginItem, savePluginFile, getPluginFileContentAndType, getPluginItemD
 import { WikiArticle, getWikiArticle, saveWikiArticle } from "./api/wiki";
 import {getLibraryFileContent, ProjectLibraryItem, saveLibraryFile} from "./api/libraries";
 import { debug } from "console";
+import { hasSameVersionTag } from "./api/versionTag";
 
 abstract class RemoteSaver<T> {
     protected abstract saveInDss(itemToSave: T): Promise<void>;
@@ -79,10 +80,13 @@ export class RecipeRemoteSaver extends RemoteSaver<RecipeAndPayload> {
         let message = "This recipe is being edited by more than one user.\n";
 
         if(conflictingElement !== null && conflictingElement.recipe){
-            const lastModifier = conflictingElement.recipe.versionTag.lastModifiedBy.login;
-            const lastModification = roundedFormat((Date.now() - conflictingElement.recipe.versionTag.lastModifiedOn));
-    
-            message += "It has been modified about "+ lastModification + " ago by "+ lastModifier +".\n";
+            const versionTag = conflictingElement.recipe.versionTag;
+            if (versionTag) {
+                const lastModifier = versionTag.lastModifiedBy.login;
+                const lastModification = roundedFormat((Date.now() - versionTag.lastModifiedOn));
+
+                message += "It has been modified about "+ lastModification + " ago by "+ lastModifier +".\n";
+            }
         }else{
             message += "It has been deleted.\n";
         }
@@ -98,7 +102,7 @@ export class RecipeRemoteSaver extends RemoteSaver<RecipeAndPayload> {
         if(rnpRemote === null || !rnpRemote.recipe){
             return false;
         }
-        return rnpLocal.recipe.versionTag.versionNumber === rnpRemote.recipe.versionTag.versionNumber;
+        return hasSameVersionTag(rnpLocal.recipe.versionTag, rnpRemote.recipe.versionTag);
     }
 }
 
@@ -115,14 +119,17 @@ export class WebAppRemoteSaver extends RemoteSaver<WebApp> {
         await FileDetails.fromWebApp(remoteWebapp).forEach(file => this.fsManager.saveInFS(file));
     }
 
-    protected getConflictMessage(conflictingElement: WebApp): string {
+    protected getConflictMessage(conflictingElement: WebApp | null): string {
         let message = "This webapp is being edited by more than one user.\n";
 
         if(conflictingElement !== null){
-            const lastModifier = conflictingElement.versionTag.lastModifiedBy.login;
-            const lastModification = roundedFormat((Date.now() - conflictingElement.versionTag.lastModifiedOn));
-    
-            message += "It has been modified about "+ lastModification + " ago by "+ lastModifier +".\n";
+            const versionTag = conflictingElement.versionTag;
+            if (versionTag) {
+                const lastModifier = versionTag.lastModifiedBy.login;
+                const lastModification = roundedFormat((Date.now() - versionTag.lastModifiedOn));
+
+                message += "It has been modified about "+ lastModification + " ago by "+ lastModifier +".\n";
+            }
         }else{
             message += "It has been deleted.\n";
         }
@@ -138,7 +145,7 @@ export class WebAppRemoteSaver extends RemoteSaver<WebApp> {
         if(remote === null){
             return false;
         }
-        return local.versionTag.versionNumber === remote.versionTag.versionNumber;
+        return hasSameVersionTag(local.versionTag, remote.versionTag);
     }
 }
 
@@ -156,14 +163,17 @@ export class WikiArticleRemoteSaver extends RemoteSaver<WikiArticle> {
         await this.fsManager.saveInFS(FileDetails.fromWikiArticle(remoteWikiArticle));
     }
 
-    protected getConflictMessage(conflictingElement: WikiArticle): string {
+    protected getConflictMessage(conflictingElement: WikiArticle | null): string {
         let message = "This wiki article is being edited by more than one user.\n";
 
         if(conflictingElement !== null){
-            const lastModifier = conflictingElement.article.versionTag.lastModifiedBy.login;
-            const lastModification = roundedFormat((Date.now() - conflictingElement.article.versionTag.lastModifiedOn));
-    
-            message += "It has been modified about "+ lastModification + " ago by "+ lastModifier +".\n";
+            const versionTag = conflictingElement.article.versionTag;
+            if (versionTag) {
+                const lastModifier = versionTag.lastModifiedBy.login;
+                const lastModification = roundedFormat((Date.now() - versionTag.lastModifiedOn));
+
+                message += "It has been modified about "+ lastModification + " ago by "+ lastModifier +".\n";
+            }
         }else{
             message += "It has been deleted.\n";
         }
@@ -179,7 +189,7 @@ export class WikiArticleRemoteSaver extends RemoteSaver<WikiArticle> {
         if(remoteWikiArticle === null){
             return false;
         }
-        return localWikiArticle.article.versionTag.versionNumber === remoteWikiArticle.article.versionTag.versionNumber;
+        return hasSameVersionTag(localWikiArticle.article.versionTag, remoteWikiArticle.article.versionTag);
     }
 }
 
