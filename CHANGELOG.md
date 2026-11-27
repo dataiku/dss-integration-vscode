@@ -2,10 +2,13 @@
 
 All notable changes to the "dataiku-dss" extension will be documented in this file.
 
+## 1.3.3 - Nov 27, 2026
+
+- Fix an issue where changes to recipes, wiki articles, and webapps imported through a Git merge could silently fail to save.
+
 ## 1.3.2 - Sept 10, 2026
 
 - Fix an issue where saving the code recipe overrides its engine to default.
-
 
 ## 1.3.1 - Oct 27, 2025
 
