@@ -21,7 +21,7 @@ export interface WikiArticle {
         name: string;
         layout: string;
         tags: string[];
-        versionTag: VersionTag;
+        versionTag?: VersionTag | null;
     }
     payload: string;
 }

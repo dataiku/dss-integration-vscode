@@ -16,7 +16,7 @@ export enum WebAppType {
 
 export interface WebApp extends WebAppDetails {
     params: BokehWebAppParams | ShinyWebAppParams | StandardWebAppParams;
-    versionTag: VersionTag;
+    versionTag?: VersionTag | null;
 }
 
 export interface BokehWebAppParams {
